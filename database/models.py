@@ -1,11 +1,8 @@
-from typing import TYPE_CHECKING
+from typing import Iterable
 from sqlalchemy import Column, ForeignKey, Integer, Text
 from sqlalchemy.orm import relationship
 
 from .main import Base
-
-if TYPE_CHECKING:
-    from typing import Iterable
 
 __all__ = ["Article", "Link"]
 

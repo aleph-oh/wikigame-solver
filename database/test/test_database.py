@@ -1,6 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, cast, Iterable
+from typing import TYPE_CHECKING
 
 import pytest
 from hypothesis import assume, strategies as st
