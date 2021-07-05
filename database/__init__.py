@@ -1,1 +1,1 @@
-from models import Article, Link
+from .models import Article, Link

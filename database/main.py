@@ -2,20 +2,18 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import Engine
-from sqlite3 import Connection as SQLite3Connection
+
+from .utilities import set_sqlite_foreign_key_pragma
 
 DB_URL = "sqlite:///./wikigame.db"
 
-engine = create_engine()
+engine = create_engine(DB_URL)
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
+Base.metadata.create_all(bind=engine)
 
-@event.listens_for(Engine, "connect")
-def set_sqlite_foreign_key_pragma(conn, _connection_record):
-    if isinstance(conn, SQLite3Connection):
-        cursor = conn.cursor()
-        cursor.execute("PRAGMA foreign_keys=ON")
-        cursor.close()
+
+event.listens_for(Engine, "connect")(set_sqlite_foreign_key_pragma)
