@@ -90,9 +90,11 @@ class DatabaseInteractions(RuleBasedStateMachine):
         expected_neighbors = self.assoc_links[article]
         db_article: Optional[Article] = self.db.query(Article).get(article.id)
         assert db_article is not None
-        links = cast(Iterable[Link], db_article.links)
         assert expected_neighbors == set(
-            map(lambda link: MockLink(id=link.id, src=link.src, dst=link.dst), links)
+            map(
+                lambda link: MockLink(id=link.id, src=link.src, dst=link.dst),
+                db_article.links,
+            )
         )
 
     @rule(link=added_links)

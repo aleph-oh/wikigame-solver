@@ -1,7 +1,11 @@
+from typing import TYPE_CHECKING
 from sqlalchemy import Column, ForeignKey, Integer, Text
 from sqlalchemy.orm import relationship
 
 from .main import Base
+
+if TYPE_CHECKING:
+    from typing import Iterable
 
 __all__ = ["Article", "Link"]
 
@@ -19,4 +23,6 @@ class Article(Base):
 
     id = Column(Integer, primary_key=True)
     title = Column(Text, nullable=False)
-    links = relationship("Link", backref="origin", foreign_keys=[Link.src])
+    links: Iterable["Link"] = relationship(
+        "Link", backref="origin", foreign_keys=[Link.src]
+    )
