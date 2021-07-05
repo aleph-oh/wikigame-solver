@@ -32,9 +32,7 @@ jobs:
 
       - name: Install Poetry
         run: pip install poetry
-        
-      - name: Find python
-        
+                
       - name: Install dependencies
         run: poetry install
         
