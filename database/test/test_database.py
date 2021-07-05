@@ -9,15 +9,13 @@ from hypothesis.stateful import RuleBasedStateMachine, Bundle, rule
 from .utilities import TestSession, test_engine
 from ..models import Article, Link
 from ..main import Base
+from ..constants import MIN_SQLITE_INT, MAX_SQLITE_INT
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
     from typing import Optional
 
 pytestmark = [pytest.mark.database]
-
-MIN_SQLITE_INT: int = -1 * 2 ** 63
-MAX_SQLITE_INT: int = 2 ** 63 - 1
 
 
 @dataclass(unsafe_hash=True, frozen=True)

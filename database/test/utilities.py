@@ -2,8 +2,9 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import Engine
 
-from ..main import Base
 from ..utilities import set_sqlite_foreign_key_pragma
+
+__all__ = ["TEST_DB_URL", "test_engine", "TestSession"]
 
 TEST_DB_URL = "sqlite:///./test.db"
 
