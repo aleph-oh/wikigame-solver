@@ -7,8 +7,8 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-wikipedia = "^1.4.0"
 SQLAlchemy = "^1.4.20"
+pywikibot = "^6.4.0"
 
 [tool.poetry.dev-dependencies]
 pytest-cov = "^2.12.1"
