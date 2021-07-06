@@ -19,4 +19,3 @@ Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 event.listens_for(Engine, "connect")(set_sqlite_foreign_key_pragma)
-
