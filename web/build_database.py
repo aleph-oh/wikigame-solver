@@ -5,9 +5,7 @@ from sqlalchemy.orm import Session as SessionTy
 import pywikibot  # type: ignore
 from database import Session, Article, Link
 
-__all__ = [
-    "add_articles_to_db"
-]
+__all__ = ["add_articles_to_db"]
 
 
 def add_articles_to_db(session: SessionTy = None) -> None:
