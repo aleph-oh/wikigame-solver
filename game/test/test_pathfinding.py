@@ -3,14 +3,14 @@ from typing import Mapping, Optional, cast
 
 import pytest
 
-from ..pathfinding import follow_parent_pointers
+from ..pathfinding import follow_parent_pointers, single_target_bfs, multi_target_bfs
 from hypothesis import example, given, strategies as st
 
 pytestmark = [pytest.mark.game]
 
 
 @st.composite
-def parents_and_dst(draw, max_size=25) -> tuple[Mapping[int, Optional[int]], int]:
+def parents_and_dst(draw, max_size=100) -> tuple[Mapping[int, Optional[int]], int]:
     def replace_one_with_none(d: dict[int, int]) -> Mapping[int, Optional[int]]:
         if not d:
             return d
@@ -23,13 +23,13 @@ def parents_and_dst(draw, max_size=25) -> tuple[Mapping[int, Optional[int]], int
     parents: Mapping[int, Optional[int]] = draw(
         st.fixed_dictionaries(
             {
-                i: st.integers(min_value=0, max_value=n - 1).filter(lambda j: i != j)
+                i: st.sampled_from(list(range(n))).filter(lambda j: i != j)
                 for i in range(n)
             }
         ).map(replace_one_with_none)
     )
-    # no need to filter: n unique keys -> dst_id must be a key
-    dst_id: int = draw(st.integers(min_value=0, max_value=n - 1))
+    # no need to filter: n unique keys in n slots -> dst_id must be a key
+    dst_id: int = draw(st.sampled_from(list(range(n))))
     return parents, dst_id
 
 
@@ -50,3 +50,27 @@ def test_follow_parent_pointers_recurrence(parents_dst):
             assert path == parent_path + [dst_id]
     if path is not None:
         assert len(set(path)) == len(path)
+
+
+_db_safe_ints = st.integers(min_value=-1 * 2 ** 63, max_value=2 ** 63 - 1)
+
+
+@st.composite
+def adjacency_lists(
+    draw, min_nodes=0, max_nodes=100, min_edges=0, max_edges=10000
+) -> Mapping[int, set[int]]:
+    keys: set[int] = draw(
+        st.sets(
+            _db_safe_ints,
+            min_size=min_nodes,
+            max_size=max_nodes,
+        )
+    )
+    keys_list = list(keys)
+    return draw(
+        st.fixed_dictionaries(
+            {k: st.sets(st.sampled_from(keys_list)) for k in keys}
+        ).filter(
+            lambda d: min_edges <= sum(len(edges) for edges in d.values()) <= max_edges
+        )
+    )
