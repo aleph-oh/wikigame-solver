@@ -1,5 +1,3 @@
-# This test code was written by the `hypothesis.extra.ghostwriter` module
-# and is provided under the Creative Commons Zero public domain dedication.
 import random
 from typing import Mapping, Optional, cast
 
@@ -12,7 +10,7 @@ pytestmark = [pytest.mark.game]
 
 
 @st.composite
-def parents_and_dst(draw, max_size=100):
+def parents_and_dst(draw, max_size=25) -> tuple[Mapping[int, Optional[int]], int]:
     def replace_one_with_none(d: dict[int, int]) -> Mapping[int, Optional[int]]:
         if not d:
             return d
@@ -21,10 +19,8 @@ def parents_and_dst(draw, max_size=100):
         }
         return result
 
-    n = draw(
-        st.integers(min_value=1, max_value=max_size)
-    )
-    parents = draw(
+    n = draw(st.integers(min_value=1, max_value=max_size))
+    parents: Mapping[int, Optional[int]] = draw(
         st.fixed_dictionaries(
             {
                 i: st.integers(min_value=0, max_value=n - 1).filter(lambda j: i != j)
@@ -32,7 +28,8 @@ def parents_and_dst(draw, max_size=100):
             }
         ).map(replace_one_with_none)
     )
-    dst_id = draw(st.integers(min_value=0, max_value=n - 1))
+    # no need to filter: n unique keys -> dst_id must be a key
+    dst_id: int = draw(st.integers(min_value=0, max_value=n - 1))
     return parents, dst_id
 
 

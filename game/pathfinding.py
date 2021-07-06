@@ -82,8 +82,10 @@ def follow_parent_pointers(dst_id: int, parents: ParentMapping) -> Optional[IDPa
     and ending at ``dst_id``, or None if no such path exists.
 
     :param dst_id: id of the article the path will end at
+                    requires dst_id in parents
     :param parents: parent-pointer mapping from articles to the article which first
                     linked to them; parents[src_id] = None
+                    requires v in parents for all v in parents
     :return: a shortest path starting from src_id and ending at dst_id,
             or None if no such path exists
 
@@ -105,6 +107,8 @@ def follow_parent_pointers(dst_id: int, parents: ParentMapping) -> Optional[IDPa
     ...     for dst in range(1, 6))
     True
     """
+    assert dst_id in parents
+    assert all(ancestor is None or ancestor in parents for ancestor in parents.values())
     curr: int = dst_id
     path = [curr]
     while parents[curr] is not None:
