@@ -5,6 +5,8 @@ from sqlalchemy.engine import Engine
 
 from .utilities import set_sqlite_foreign_key_pragma
 
+__all__ = ["DB_URL", "engine", "Session", "Base"]
+
 DB_URL = "sqlite:///./wikigame.db"
 
 engine = create_engine(DB_URL)
