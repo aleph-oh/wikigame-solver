@@ -24,7 +24,3 @@ def add_articles_to_db(session: SessionTy = None) -> None:
         )  # type: ignore
         session.add(db_article)
         session.commit()
-
-
-if __name__ == "__main__":
-    add_articles_to_db()

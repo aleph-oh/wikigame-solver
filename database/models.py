@@ -2,7 +2,7 @@ from typing import Iterable
 from sqlalchemy import Column, ForeignKey, Integer, Text
 from sqlalchemy.orm import relationship
 
-from .main import Base
+from .constants import Base
 
 __all__ = ["Article", "Link"]
 

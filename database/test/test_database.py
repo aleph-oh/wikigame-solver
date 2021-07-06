@@ -8,7 +8,7 @@ from hypothesis.stateful import RuleBasedStateMachine, Bundle, rule
 
 from .utilities import TestSession, test_engine
 from ..models import Article, Link
-from ..main import Base
+from ..__main__ import Base
 from ..constants import MIN_SQLITE_INT, MAX_SQLITE_INT
 
 if TYPE_CHECKING:

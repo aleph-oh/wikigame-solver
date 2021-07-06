@@ -1,2 +1,2 @@
 from .models import Article, Link
-from .main import Session
+from .constants import Session
