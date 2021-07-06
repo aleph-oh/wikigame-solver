@@ -37,7 +37,7 @@ def single_target_bfs(
     if dst_id not in parents:
         return None
     assert parents[src_id] is None
-    shortest_path = backtrack(dst_id, parents)
+    shortest_path = follow_parent_pointers(dst_id, parents)
     assert shortest_path is not None
     return [id_to_title(db, id_) for id_ in shortest_path]
 
@@ -76,7 +76,7 @@ def _bfs_update_step(
     return q, parents
 
 
-def backtrack(dst_id: int, parents: ParentMapping) -> Optional[IDPath]:
+def follow_parent_pointers(dst_id: int, parents: ParentMapping) -> Optional[IDPath]:
     """
     Given a parent-pointer mapping ``parent``, find a shortest path starting from ``src_id``
     and ending at ``dst_id``, or None if no such path exists.
@@ -88,19 +88,20 @@ def backtrack(dst_id: int, parents: ParentMapping) -> Optional[IDPath]:
             or None if no such path exists
 
     >>> parent_map = {0: None, 1: 0, 2: 0, 3: 1, 4: 2, 5: 3}
-    >>> backtrack(0, parent_map)
+    >>> follow_parent_pointers(0, parent_map)
     [0]
-    >>> backtrack(1, parent_map)
+    >>> follow_parent_pointers(1, parent_map)
     [0, 1]
-    >>> backtrack(2, parent_map)
+    >>> follow_parent_pointers(2, parent_map)
     [0, 2]
-    >>> backtrack(3, parent_map)
+    >>> follow_parent_pointers(3, parent_map)
     [0, 1, 3]
-    >>> backtrack(4, parent_map)
+    >>> follow_parent_pointers(4, parent_map)
     [0, 2, 4]
-    >>> backtrack(5, parent_map)
+    >>> follow_parent_pointers(5, parent_map)
     [0, 1, 3, 5]
-    >>> all(backtrack(dst, parent_map) == backtrack(parent_map[dst], parent_map) + [dst]
+    >>> all(follow_parent_pointers(dst, parent_map) ==
+    ...     follow_parent_pointers(parent_map[dst], parent_map) + [dst]
     ...     for dst in range(1, 6))
     True
     """
