@@ -1,7 +1,7 @@
 # This test code was written by the `hypothesis.extra.ghostwriter` module
 # and is provided under the Creative Commons Zero public domain dedication.
 import random
-from typing import Optional
+from typing import Mapping, Optional, cast
 
 import pytest
 
@@ -13,15 +13,17 @@ pytestmark = [pytest.mark.game]
 
 @st.composite
 def parents_and_dst(draw, max_size=100):
-    def replace_one_with_none(d: dict[int, int]) -> dict[int, Optional[int]]:
+    def replace_one_with_none(d: dict[int, int]) -> Mapping[int, Optional[int]]:
         if not d:
             return d
-        d |= {random.choice(d): None}
-        return d
+        result = cast(dict[int, Optional[int]], d) | {
+            random.choice(list(d.keys())): None
+        }
+        return result
 
     n = draw(
         st.integers(min_value=1, max_value=max_size)
-    )  # we test the n = 0 case separately
+    )
     parents = draw(
         st.fixed_dictionaries(
             {
