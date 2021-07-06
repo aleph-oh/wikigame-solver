@@ -19,17 +19,17 @@ def parents_and_dst(draw, max_size=100) -> tuple[Mapping[int, Optional[int]], in
         }
         return result
 
-    n = draw(st.integers(min_value=1, max_value=max_size))
+    keys: set[int] = draw(st.sets(st.integers(), min_size=1, max_size=max_size))
+    keys_list = list(keys)
     parents: Mapping[int, Optional[int]] = draw(
         st.fixed_dictionaries(
             {
-                i: st.sampled_from(list(range(n))).filter(lambda j: i != j)
-                for i in range(n)
+                k: st.sampled_from(keys_list).filter(lambda i: i != k)
+                for k in keys
             }
         ).map(replace_one_with_none)
     )
-    # no need to filter: n unique keys in n slots -> dst_id must be a key
-    dst_id: int = draw(st.sampled_from(list(range(n))))
+    dst_id: int = draw(st.sampled_from(keys_list))
     return parents, dst_id
 
 
