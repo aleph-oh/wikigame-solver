@@ -291,7 +291,7 @@ wikitextparser = ["wikitextparser (>=0.47.5)", "wikitextparser (>=0.47.0)"]
 name = "regex"
 version = "2021.7.5"
 description = "Alternative regular expression module, to replace re."
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 
@@ -393,10 +393,33 @@ brotli = ["brotlipy (>=0.6.0)"]
 secure = ["pyOpenSSL (>=0.14)", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "certifi", "ipaddress"]
 socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
+[[package]]
+name = "wcwidth"
+version = "0.2.5"
+description = "Measures the displayed width of unicode strings in a terminal"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
+name = "wikitextparser"
+version = "0.47.5"
+description = "A simple parsing tool for MediaWiki's wikitext markup."
+category = "main"
+optional = false
+python-versions = ">=3.5"
+
+[package.dependencies]
+regex = {version = "*", markers = "python_version != \"3.5\" or platform_system != \"Windows\""}
+wcwidth = "*"
+
+[package.extras]
+dev = ["path.py", "coverage", "twine"]
+
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "6dd5dfc1bfa0d601cf0cc0ef9ef3956f7514ab005cc6f8c9148368252c74e013"
+content-hash = "a89441b0cbc950d40e912bef871e91e1b885fc4fb2d4160d132874727a9012f7"
 
 [metadata.files]
 appdirs = [
@@ -707,4 +730,12 @@ typing-extensions = [
 urllib3 = [
     {file = "urllib3-1.26.6-py2.py3-none-any.whl", hash = "sha256:39fb8672126159acb139a7718dd10806104dec1e2f0f6c88aab05d17df10c8d4"},
     {file = "urllib3-1.26.6.tar.gz", hash = "sha256:f57b4c16c62fa2760b7e3d97c35b255512fb6b59a259730f36ba32ce9f8e342f"},
+]
+wcwidth = [
+    {file = "wcwidth-0.2.5-py2.py3-none-any.whl", hash = "sha256:beb4802a9cebb9144e99086eff703a642a13d6a0052920003a230f3294bbe784"},
+    {file = "wcwidth-0.2.5.tar.gz", hash = "sha256:c4d647b99872929fdb7bdcaa4fbe7f01413ed3d98077df798530e5b04f116c83"},
+]
+wikitextparser = [
+    {file = "wikitextparser-0.47.5-py3-none-any.whl", hash = "sha256:ab79bdf336d1555398faf1b5d30e1566da4dee9cc0aa6dc782d247bf19ce1590"},
+    {file = "wikitextparser-0.47.5.tar.gz", hash = "sha256:3881a563ce201851216c1b32b606dc940e35034da9113c2b2e8a775d36513b34"},
 ]
