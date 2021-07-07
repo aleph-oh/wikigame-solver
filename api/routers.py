@@ -19,7 +19,13 @@ router = APIRouter()
 async def path_from_first_to_second(
     src: str, dst: str, db: Session = Depends(database.get_db)
 ):
-    path = single_target_bfs(db, src, dst)
+    try:
+        path = single_target_bfs(db, src, dst)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Could not find matching article for at least one of {src} and {dst}"
+        )
     if path is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

@@ -9,7 +9,7 @@ __all__ = ["DB_URL", "engine", "Session", "Base", "MIN_SQLITE_INT", "MAX_SQLITE_
 
 DB_URL = "sqlite:///./wikigame.db"
 
-engine = create_engine(DB_URL)
+engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
 
 Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

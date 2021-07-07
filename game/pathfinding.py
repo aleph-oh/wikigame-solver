@@ -27,6 +27,7 @@ def single_target_bfs(
     :param dst_title: title of the article to end at
     :return: a shortest path starting from src_title and ending at dst_title,
             or None if no such path exists
+    :raises ValueError: if either src_id or dst_id cannot be found from a title
     """
     src_id = title_to_id(db, src_title)
     dst_id = title_to_id(db, dst_title)
