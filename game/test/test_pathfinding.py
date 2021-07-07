@@ -2,7 +2,10 @@ import random
 from typing import Mapping, Optional, cast
 
 import pytest
+from sqlalchemy.orm import Session
 
+from database import Article, Link
+from .utilities import session_scope
 from ..pathfinding import follow_parent_pointers, single_target_bfs, multi_target_bfs
 from hypothesis import example, given, strategies as st
 
@@ -23,10 +26,7 @@ def parents_and_dst(draw, max_size=100) -> tuple[Mapping[int, Optional[int]], in
     keys_list = list(keys)
     parents: Mapping[int, Optional[int]] = draw(
         st.fixed_dictionaries(
-            {
-                k: st.sampled_from(keys_list).filter(lambda i: i != k)
-                for k in keys
-            }
+            {k: st.sampled_from(keys_list).filter(lambda i: i != k) for k in keys}
         ).map(replace_one_with_none)
     )
     dst_id: int = draw(st.sampled_from(keys_list))
@@ -74,3 +74,49 @@ def adjacency_lists(
             lambda d: min_edges <= sum(len(edges) for edges in d.values()) <= max_edges
         )
     )
+
+
+@st.composite
+def two_nodes_and_graph(
+    draw, min_nodes=1, max_nodes=100, min_edges=0, max_edges=10000
+) -> tuple[Mapping[int, set[int]], int, int]:
+    graph = draw(
+        adjacency_lists(
+            min_nodes=min_nodes,
+            max_nodes=max_nodes,
+            min_edges=min_edges,
+            max_edges=max_edges,
+        )
+    )
+    nodes = list(graph.keys())
+    return draw(
+        st.tuples(st.just(graph), st.sampled_from(nodes), st.sampled_from(nodes))
+    )
+
+
+def add_graph_to_db(session: Session, graph: Mapping[int, set[int]]) -> None:
+    for node_id, adjacent in graph.items():
+        session.add(
+            Article(
+                id=node_id,
+                title=str(node_id),
+                links=[Link(src=node_id, dst=other_id) for other_id in adjacent],
+            )
+        )
+    session.commit()
+
+
+@given(inputs=two_nodes_and_graph())
+def test_single_multi_target_equivalent(
+    inputs: tuple[Mapping[int, set[int]], int, int]
+):
+    graph, src, dst = inputs
+    with session_scope() as session:
+        add_graph_to_db(session, graph)
+        single_target_result = single_target_bfs(session, str(src), str(dst))
+        multi_target_ppd = multi_target_bfs(session, str(src))
+        single_target_via_pp = follow_parent_pointers(dst, multi_target_ppd)
+        if single_target_result is None:
+            assert single_target_via_pp is None
+        else:
+            assert single_target_result == list(map(str, single_target_via_pp))

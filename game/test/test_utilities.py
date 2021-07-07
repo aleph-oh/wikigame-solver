@@ -1,36 +1,15 @@
 # This test code was written by the `hypothesis.extra.ghostwriter` module
 # and is provided under the Creative Commons Zero public domain dedication.
-from contextlib import contextmanager
-
 import pytest
 from hypothesis import given, reject, strategies as st
 from sqlalchemy.orm import Session
 
 from database import Article
-from database.constants import Base
-from database.test.utilities import TestSession, test_engine
+from .utilities import session_scope
 
 import game.utilities
 
 pytestmark = [pytest.mark.game]
-
-
-@contextmanager
-def session_scope():
-    """Provide a transactional scope around a series of operations."""
-    Base.metadata.drop_all(test_engine, checkfirst=True)
-    Base.metadata.create_all(test_engine, checkfirst=False)
-    session = TestSession()
-    try:
-        yield session
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-        Base.metadata.drop_all(test_engine, checkfirst=True)
-        Base.metadata.create_all(test_engine, checkfirst=False)
 
 
 def add_article(database_conn: Session, article_id: int, article_title: str) -> None:
