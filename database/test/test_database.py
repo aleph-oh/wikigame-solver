@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING
 
 import pytest
 from hypothesis import assume, strategies as st
-from hypothesis.stateful import RuleBasedStateMachine, Bundle, rule
+from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 
 from .utilities import TestSession, test_engine
-from ..models import Article, Link
 from ..__main__ import Base
-from ..constants import MIN_SQLITE_INT, MAX_SQLITE_INT
+from ..constants import MAX_SQLITE_INT, MIN_SQLITE_INT
+from ..models import Article, Link
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session

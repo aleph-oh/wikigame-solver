@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, Field, conlist, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl
 
 
 class ArticleWrapper(BaseModel):

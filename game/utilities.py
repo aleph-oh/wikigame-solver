@@ -1,4 +1,5 @@
 from typing import Optional
+
 from sqlalchemy.orm import Session as SessionTy
 
 from database import Article

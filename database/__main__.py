@@ -2,7 +2,7 @@
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
 
-from .constants import engine, Base
+from .constants import Base, engine
 from .utilities import set_sqlite_foreign_key_pragma
 
 Base.metadata.create_all(bind=engine)

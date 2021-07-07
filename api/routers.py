@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 import database
+from game.pathfinding import follow_parent_pointers, multi_target_bfs, single_target_bfs
 from game.utilities import id_to_title, title_to_id
 from .schemas import ArticlePath, ArticleWrapper, ManyArticlePaths
-from game.pathfinding import follow_parent_pointers, single_target_bfs, multi_target_bfs
 
 router = APIRouter()
 

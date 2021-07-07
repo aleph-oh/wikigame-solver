@@ -1,4 +1,5 @@
 from typing import Iterable
+
 from sqlalchemy import Column, ForeignKey, Integer, Text
 from sqlalchemy.orm import relationship
 
