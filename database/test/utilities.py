@@ -1,3 +1,6 @@
+"""
+This module contains utilities for testing the database.
+"""
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker

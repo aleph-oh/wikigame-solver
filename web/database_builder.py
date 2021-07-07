@@ -1,3 +1,6 @@
+"""
+This module contains methods used for populating and constructing the article graph database.
+"""
 from typing import Iterable, cast
 
 import pywikibot  # type: ignore
@@ -5,17 +8,17 @@ from pywikibot.pagegenerators import PreloadingGenerator  # type: ignore
 from sqlalchemy.orm import Session as SessionTy
 
 from database import Article, Link, Session
-from database.constants import Base, engine
 
-__all__ = ["populate_db", "clear_db"]
-
-
-def clear_db() -> None:
-    Base.metadata.drop_all(bind=engine, checkfirst=True)
-    Base.metadata.create_all(bind=engine, checkfirst=False)
+__all__ = ["populate_db"]
 
 
 def populate_db(session: SessionTy = None) -> None:
+    """
+    Populate the database which ``session`` can modify to act as a graph, with articles
+    as nodes and links between articles as uni-directional edges.
+
+    :param session: database session
+    """
     if session is None:
         session = Session()
     site = pywikibot.Site("en")

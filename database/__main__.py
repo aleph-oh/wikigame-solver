@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Initializes database tables and foreign keys.
+"""
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
 
