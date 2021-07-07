@@ -2,7 +2,7 @@ import random
 from typing import Mapping, Optional, cast
 
 import pytest
-from hypothesis.strategies import SearchStrategy
+from hypothesis.strategies import DataObject, SearchStrategy
 from sqlalchemy.orm import Session
 
 from database import Article, Link
@@ -122,3 +122,31 @@ def test_single_multi_target_equivalent(
         else:
             assert single_target_via_pp is not None
             assert single_target_result == list(map(str, single_target_via_pp))
+
+
+@given(inputs=two_nodes_and_graph(), data=st.data())
+def test_optimal_substructure(
+    inputs: tuple[Mapping[int, set[int]], int, int], data: DataObject
+):
+    graph, src, dst = inputs
+    with session_scope() as session:
+        add_graph_to_db(session, graph)
+        path = single_target_bfs(session, str(src), str(dst))
+        if path is None:
+            assert set() in graph.values()
+            return
+        # shortest paths have optimal substructure:
+        # if the path is P[0..k], P[i..j] is a shortest path from i to j
+        # for all 0 <= i <= j <= k
+        sub_start_i = data.draw(
+            st.sampled_from(range(len(path))), label="index of start of sub-path"
+        )
+        sub_end_i = data.draw(
+            st.sampled_from(range(sub_start_i, len(path))),
+            label="index of end of sub-path",
+        )
+        sub_src = path[sub_start_i]
+        sub_dst = path[sub_end_i]
+        assert len(path[sub_start_i : sub_end_i + 1]) == len(
+            single_target_bfs(session, sub_src, sub_dst)
+        )
