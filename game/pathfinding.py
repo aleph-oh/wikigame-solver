@@ -105,6 +105,8 @@ def follow_parent_pointers(dst_id: int, parents: ParentMapping) -> Optional[IDPa
     ...     follow_parent_pointers(parent_map[dst], parent_map) + [dst]
     ...     for dst in range(1, 6))
     True
+    >>> follow_parent_pointers(7, parent_map) is None
+    True
     """
     if dst_id not in parents:
         return None

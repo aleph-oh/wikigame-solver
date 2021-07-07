@@ -101,6 +101,7 @@ def add_graph_to_db(session: Session, graph: Mapping[int, set[int]]) -> None:
                 id=node_id,
                 title=str(node_id),
                 links=[Link(src=node_id, dst=other_id) for other_id in adjacent],
+                # type: ignore
             )
         )
     session.commit()
@@ -119,4 +120,5 @@ def test_single_multi_target_equivalent(
         if single_target_result is None:
             assert single_target_via_pp is None
         else:
+            assert single_target_via_pp is not None
             assert single_target_result == list(map(str, single_target_via_pp))
