@@ -1,9 +1,12 @@
+"""
+This module contains tests for pathfinding functions in the game.pathfinding module.
+"""
 import random
-from typing import Mapping, Optional, cast
+from typing import Iterable, Mapping, Optional, cast
 
 import pytest
 from hypothesis import example, given, strategies as st
-from hypothesis.strategies import DataObject, SearchStrategy
+from hypothesis.strategies import DataObject
 from sqlalchemy.orm import Session
 
 from database import Article, Link
@@ -14,10 +17,22 @@ pytestmark = [pytest.mark.game]
 
 
 @st.composite
-def parents_and_dst(
-    draw, max_size=100
-) -> SearchStrategy[tuple[Mapping[int, Optional[int]], int]]:
+def parents_and_dst(draw, max_size=100) -> tuple[Mapping[int, Optional[int]], int]:
+    """
+    Generates parent pointer dictionaries for simple graphs and
+    a destination to follow parent pointers from.
+
+    :param draw: used to sample values
+    :param max_size: maximum size of parent pointer dictionary
+    :return: ppd and a node in the ppd
+    """
+
     def replace_one_with_none(d: dict[int, int]) -> Mapping[int, Optional[int]]:
+        """
+        Return a new dictionary with the same key-value pairs as ``d``, except for one
+        key-value pair for which the value is None in the new dictionary.
+        If ``d`` is empty, return the empty dictionary.
+        """
         if not d:
             return d
         result = cast(dict[int, Optional[int]], d) | {random.choice(list(d.keys())): None}
@@ -56,7 +71,18 @@ def test_follow_parent_pointers_recurrence(parents_dst):
 @st.composite
 def adjacency_lists(
     draw, min_nodes=0, max_nodes=100, min_edges=0, max_edges=10000
-) -> SearchStrategy[Mapping[int, set[int]]]:
+) -> Mapping[int, Iterable[int]]:
+    """
+    Generates adjacency list representations of graphs, constrained by the properties
+    passed in.
+
+    :param draw: used to sample values
+    :param min_nodes: minimum number of nodes
+    :param max_nodes: maximum number of nodes
+    :param min_edges: minimum number of edges
+    :param max_edges: maximum number of edges
+    :return: adjacency list representation of a graph
+    """
     keys: set[int] = draw(
         st.sets(
             db_safe_ints,
@@ -73,9 +99,21 @@ def adjacency_lists(
 
 
 @st.composite
-def two_nodes_and_graph(
+def graph_and_two_nodes(
     draw, min_nodes=1, max_nodes=100, min_edges=0, max_edges=10000
-) -> SearchStrategy[tuple[Mapping[int, set[int]], int, int]]:
+) -> tuple[Mapping[int, Iterable[int]], int, int]:
+    """
+    Generates adjacency list representations of graphs as in ``adjacency_lists``,
+    while also returning two nodes in the graph.
+
+    :param draw: used to sample values
+    :param min_nodes: minimum number of nodes
+    :param max_nodes: maximum number of nodes
+    :param min_edges: minimum number of edges
+    :param max_edges: maximum number of edges
+    :return: adjacency list representation of a graph, and two not necessarily distinct nodes
+             in the graph
+    """
     graph = draw(
         adjacency_lists(
             min_nodes=min_nodes,
@@ -88,7 +126,8 @@ def two_nodes_and_graph(
     return draw(st.tuples(st.just(graph), st.sampled_from(nodes), st.sampled_from(nodes)))
 
 
-def add_graph_to_db(session: Session, graph: Mapping[int, set[int]]) -> None:
+def add_graph_to_db(session: Session, graph: Mapping[int, Iterable[int]]) -> None:
+    """Add the provided graph to the database attached to ``session``."""
     for node_id, adjacent in graph.items():
         session.add(
             Article(
@@ -101,8 +140,8 @@ def add_graph_to_db(session: Session, graph: Mapping[int, set[int]]) -> None:
     session.commit()
 
 
-@given(inputs=two_nodes_and_graph())
-def test_single_multi_target_equivalent(inputs: tuple[Mapping[int, set[int]], int, int]):
+@given(inputs=graph_and_two_nodes())
+def test_single_multi_target_equivalent(inputs: tuple[Mapping[int, Iterable[int]], int, int]):
     graph, src, dst = inputs
     with session_scope() as session:
         add_graph_to_db(session, graph)
@@ -116,7 +155,7 @@ def test_single_multi_target_equivalent(inputs: tuple[Mapping[int, set[int]], in
             assert single_target_result == list(map(str, single_target_via_pp))
 
 
-@given(inputs=two_nodes_and_graph(), data=st.data())
+@given(inputs=graph_and_two_nodes(), data=st.data())
 def test_single_target_optimal_substructure(
     inputs: tuple[Mapping[int, set[int]], int, int], data: DataObject
 ) -> None:
