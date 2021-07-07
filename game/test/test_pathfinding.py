@@ -2,10 +2,11 @@ import random
 from typing import Mapping, Optional, cast
 
 import pytest
+from hypothesis.strategies import SearchStrategy
 from sqlalchemy.orm import Session
 
 from database import Article, Link
-from .utilities import session_scope
+from .utilities import db_safe_ints, session_scope
 from ..pathfinding import follow_parent_pointers, single_target_bfs, multi_target_bfs
 from hypothesis import example, given, strategies as st
 
@@ -13,7 +14,9 @@ pytestmark = [pytest.mark.game]
 
 
 @st.composite
-def parents_and_dst(draw, max_size=100) -> tuple[Mapping[int, Optional[int]], int]:
+def parents_and_dst(
+    draw, max_size=100
+) -> SearchStrategy[tuple[Mapping[int, Optional[int]], int]]:
     def replace_one_with_none(d: dict[int, int]) -> Mapping[int, Optional[int]]:
         if not d:
             return d
@@ -30,7 +33,7 @@ def parents_and_dst(draw, max_size=100) -> tuple[Mapping[int, Optional[int]], in
         ).map(replace_one_with_none)
     )
     dst_id: int = draw(st.sampled_from(keys_list))
-    return parents, dst_id
+    return draw(st.tuples(st.just(parents), st.just(dst_id)))
 
 
 @given(parents_dst=parents_and_dst())
@@ -52,16 +55,13 @@ def test_follow_parent_pointers_recurrence(parents_dst):
         assert len(set(path)) == len(path)
 
 
-_db_safe_ints = st.integers(min_value=-1 * 2 ** 63, max_value=2 ** 63 - 1)
-
-
 @st.composite
 def adjacency_lists(
     draw, min_nodes=0, max_nodes=100, min_edges=0, max_edges=10000
-) -> Mapping[int, set[int]]:
+) -> SearchStrategy[Mapping[int, set[int]]]:
     keys: set[int] = draw(
         st.sets(
-            _db_safe_ints,
+            db_safe_ints,
             min_size=min_nodes,
             max_size=max_nodes,
         )
@@ -79,7 +79,7 @@ def adjacency_lists(
 @st.composite
 def two_nodes_and_graph(
     draw, min_nodes=1, max_nodes=100, min_edges=0, max_edges=10000
-) -> tuple[Mapping[int, set[int]], int, int]:
+) -> SearchStrategy[tuple[Mapping[int, set[int]], int, int]]:
     graph = draw(
         adjacency_lists(
             min_nodes=min_nodes,
