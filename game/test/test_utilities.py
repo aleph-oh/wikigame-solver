@@ -1,5 +1,6 @@
-# This test code was written by the `hypothesis.extra.ghostwriter` module
-# and is provided under the Creative Commons Zero public domain dedication.
+"""
+This module contains tests for utilities provided in the game module.
+"""
 import pytest
 from hypothesis import given, reject, strategies as st
 from sqlalchemy.orm import Session
@@ -12,6 +13,10 @@ pytestmark = [pytest.mark.game]
 
 
 def add_article(database_conn: Session, article_id: int, article_title: str) -> None:
+    """
+    Add an article with id ``article_id`` and title ``article_title`` to the database that
+    ``database_conn`` is associated with..
+    """
     database_conn.add(Article(id=article_id, title=article_title))
     database_conn.commit()
 

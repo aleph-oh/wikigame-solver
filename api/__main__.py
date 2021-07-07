@@ -20,4 +20,5 @@ app = FastAPI(
 app.include_router(router, prefix="/wikidata")
 
 if __name__ == "__main__":
+    # noinspection PyTypeChecker
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
