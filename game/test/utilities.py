@@ -1,3 +1,6 @@
+"""
+This module contains utilities for testing the game module.
+"""
 from contextlib import contextmanager
 
 from hypothesis import strategies as st
