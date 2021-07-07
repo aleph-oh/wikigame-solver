@@ -46,7 +46,7 @@ def parents_and_dst(draw, max_size=100) -> tuple[Mapping[int, Optional[int]], in
         ).map(replace_one_with_none)
     )
     dst_id: int = draw(st.sampled_from(keys_list))
-    return draw(st.tuples(st.just(parents), st.just(dst_id)))
+    return parents, dst_id
 
 
 @given(parents_dst=parents_and_dst())
@@ -91,11 +91,12 @@ def adjacency_lists(
         )
     )
     keys_list = list(keys)
-    return draw(
+    graph = draw(
         st.fixed_dictionaries({k: st.sets(st.sampled_from(keys_list)) for k in keys}).filter(
             lambda d: min_edges <= sum(len(edges) for edges in d.values()) <= max_edges
         )
     )
+    return graph
 
 
 @st.composite
@@ -123,7 +124,9 @@ def graph_and_two_nodes(
         )
     )
     nodes = list(graph.keys())
-    return draw(st.tuples(st.just(graph), st.sampled_from(nodes), st.sampled_from(nodes)))
+    src = draw(st.sampled_from(nodes))
+    dst = draw(st.sampled_from(nodes))
+    return graph, src, dst
 
 
 def add_graph_to_db(session: Session, graph: Mapping[int, Iterable[int]]) -> None:
@@ -140,7 +143,7 @@ def add_graph_to_db(session: Session, graph: Mapping[int, Iterable[int]]) -> Non
     session.commit()
 
 
-@given(inputs=graph_and_two_nodes())
+@given(inputs=graph_and_two_nodes(max_nodes=25, max_edges=300))
 def test_single_multi_target_equivalent(inputs: tuple[Mapping[int, Iterable[int]], int, int]):
     graph, src, dst = inputs
     with session_scope() as session:
@@ -155,7 +158,7 @@ def test_single_multi_target_equivalent(inputs: tuple[Mapping[int, Iterable[int]
             assert single_target_result == list(map(str, single_target_via_pp))
 
 
-@given(inputs=graph_and_two_nodes(), data=st.data())
+@given(inputs=graph_and_two_nodes(max_nodes=25, max_edges=300), data=st.data())
 def test_single_target_optimal_substructure(
     inputs: tuple[Mapping[int, set[int]], int, int], data: DataObject
 ) -> None:
@@ -166,8 +169,8 @@ def test_single_target_optimal_substructure(
         if path is None:
             return
         # shortest paths have optimal substructure:
-        # if the path is P[0..k], P[i..j] is a shortest path from i to j
-        # for all 0 <= i <= j <= k
+        # if the path is P[0..n], P[i..j] is a shortest path from i to j
+        # for all 0 <= i <= j <= n
         sub_start_i = data.draw(
             st.sampled_from(range(len(path))), label="index of start of sub-path"
         )
