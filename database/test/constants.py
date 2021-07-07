@@ -1,5 +1,5 @@
 """
-This module contains utilities for testing the database.
+This module contains constants for testing the database.
 """
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine

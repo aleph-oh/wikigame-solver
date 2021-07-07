@@ -9,7 +9,7 @@ import pytest
 from hypothesis import assume, strategies as st
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 
-from .utilities import TestSession, test_engine
+from .constants import TestSession, test_engine
 from ..__main__ import Base
 from ..constants import MAX_SQLITE_INT, MIN_SQLITE_INT
 from ..models import Article, Link
