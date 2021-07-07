@@ -24,7 +24,7 @@ async def path_from_first_to_second(
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Could not find matching article for at least one of {src} and {dst}"
+            detail=f"Could not find matching article for at least one of {src} and {dst}",
         )
     if path is None:
         raise HTTPException(
