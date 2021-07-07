@@ -2,7 +2,7 @@ import random
 from typing import Mapping, Optional, cast
 
 import pytest
-from hypothesis.strategies import DataObject, SearchStrategy
+from hypothesis.strategies import SearchStrategy
 from sqlalchemy.orm import Session
 
 from database import Article, Link
@@ -51,8 +51,6 @@ def test_follow_parent_pointers_recurrence(parents_dst):
         parent_path = follow_parent_pointers(ancestor, parents)
         if parent_path is not None:
             assert path == parent_path + [dst_id]
-        else:
-            assert path is None
     if path is not None:
         assert len(set(path)) == len(path)
 
@@ -71,7 +69,7 @@ def adjacency_lists(
     keys_list = list(keys)
     return draw(
         st.fixed_dictionaries(
-            {k: st.sets((st.sampled_from(keys_list).filter(k.__ne__))) for k in keys}
+            {k: st.sets(st.sampled_from(keys_list)) for k in keys}
         ).filter(
             lambda d: min_edges <= sum(len(edges) for edges in d.values()) <= max_edges
         )
@@ -112,7 +110,7 @@ def add_graph_to_db(session: Session, graph: Mapping[int, set[int]]) -> None:
 @given(inputs=two_nodes_and_graph())
 def test_single_multi_target_equivalent(
     inputs: tuple[Mapping[int, set[int]], int, int]
-) -> None:
+):
     graph, src, dst = inputs
     with session_scope() as session:
         add_graph_to_db(session, graph)
