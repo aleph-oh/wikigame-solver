@@ -15,15 +15,11 @@ def title_to_id(db: SessionTy, article_title: str) -> int:
     :return: the id corresponding to the article uniquely named article_name
     :raises ValueError: if n articles have the title article_title for some n != 1
     """
-    db_articles: list[Article] = (
-        db.query(Article).filter(Article.title == article_title).all()
-    )
+    db_articles: list[Article] = db.query(Article).filter(Article.title == article_title).all()
     if not db_articles:
         raise ValueError(f'No article with title "{article_title}" found in database')
     if len(db_articles) > 1:
-        raise ValueError(
-            f'Multiple articles found titled "{article_title}": {db_articles}'
-        )
+        raise ValueError(f'Multiple articles found titled "{article_title}": {db_articles}')
     return db_articles[0].id
 
 

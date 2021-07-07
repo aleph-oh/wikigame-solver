@@ -14,9 +14,7 @@ IDPath = list[int]
 TitlePath = list[str]
 
 
-def single_target_bfs(
-    db: SessionTy, src_title: str, dst_title: str
-) -> Optional[TitlePath]:
+def single_target_bfs(db: SessionTy, src_title: str, dst_title: str) -> Optional[TitlePath]:
     """
     Given a graph represented in the database which session ``db`` accesses, find the shortest
     path from the article with title ``src_title`` to the article with title ``dst_title``, or

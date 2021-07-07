@@ -46,9 +46,7 @@ async def path_from_first_to_second(
 
 
 @router.get("/many", response_model=ManyArticlePaths)
-async def paths_from_first(
-    src: str, dsts: list[str], db: Session = Depends(database.get_db)
-):
+async def paths_from_first(src: str, dsts: list[str], db: Session = Depends(database.get_db)):
     paths: dict[str, Optional[ArticlePath]] = {}
     ppd = multi_target_bfs(db, src)
     for dst in dsts:

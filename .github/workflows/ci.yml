@@ -37,7 +37,7 @@ jobs:
         run: poetry install
         
       - name: Run Black code formatter
-        run: poetry run black .
+        run: poetry run black . --check
         
       - name: Check with mypy
         run: poetry run mypy .
