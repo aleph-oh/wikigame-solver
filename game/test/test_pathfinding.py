@@ -148,6 +148,8 @@ def test_single_target_optimal_substructure(
         )
         sub_src = path[sub_start_i]
         sub_dst = path[sub_end_i]
+        subpath = single_target_bfs(session, sub_src, sub_dst)
+        assert subpath is not None
         assert len(path[sub_start_i : sub_end_i + 1]) == len(
-            single_target_bfs(session, sub_src, sub_dst)
+            subpath
         )
