@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session as SessionTy
 from database import Article
 from .utilities import title_to_id, id_to_title
 
-__all__ = ["single_target_bfs", "multi_target_bfs", "follow_parent_pointers"]
+__all__ = ["single_target_bfs", "multi_target_bfs"]
 
 ParentMapping = Mapping[int, Optional[int]]
 ParentDict = dict[int, Optional[int]]
