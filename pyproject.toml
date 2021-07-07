@@ -10,6 +10,8 @@ python = "^3.9"
 SQLAlchemy = "^1.4.20"
 pywikibot = "^6.4.0"
 wikitextparser = "^0.47.5"
+fastapi = "^0.66.0"
+pydantic = "^1.8.2"
 
 [tool.poetry.dev-dependencies]
 pytest-cov = "^2.12.1"
