@@ -1,13 +1,17 @@
+"""
+This module contains utilities used for retrieving Articles from the database
+given only a single column value for a row.
+"""
 from typing import Optional
 
-from sqlalchemy.orm import Session as SessionTy
+from sqlalchemy.orm import Session
 
 from database import Article
 
 __all__ = ["title_to_id", "id_to_title"]
 
 
-def title_to_id(db: SessionTy, article_title: str) -> int:
+def title_to_id(db: Session, article_title: str) -> int:
     """
     Map titles of articles to their corresponding ID in the provided database.
 
@@ -24,7 +28,7 @@ def title_to_id(db: SessionTy, article_title: str) -> int:
     return db_articles[0].id
 
 
-def id_to_title(db: SessionTy, article_id: int) -> str:
+def id_to_title(db: Session, article_id: int) -> str:
     """
     Map ids of articles to their corresponding title in the provided database.
 

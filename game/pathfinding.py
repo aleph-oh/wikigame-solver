@@ -1,3 +1,7 @@
+"""
+This module contains pathfinding functions which use the article graph database for finding
+shortest paths between articles.
+"""
 from collections import deque
 from typing import Mapping, Optional, cast
 

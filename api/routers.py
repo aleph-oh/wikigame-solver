@@ -1,3 +1,6 @@
+"""
+This module contains routing functions implementing the web API.
+"""
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -16,9 +19,15 @@ router = APIRouter()
     responses={status.HTTP_404_NOT_FOUND: {"msg": str}},
     response_model=ArticlePath,
 )
-async def path_from_first_to_second(
-    src: str, dst: str, db: Session = Depends(database.get_db)
-):
+async def path_from_src_to_dst(src: str, dst: str, db: Session = Depends(database.get_db)):
+    """
+    Find a path of articles which minimizes the number of clicks starting from src and ending
+    at dst.
+
+    :param src: starting article
+    :param dst: ending article
+    :return: a shortest path from src to dst
+    """
     try:
         path = single_target_bfs(db, src, dst)
     except ValueError:
@@ -47,6 +56,13 @@ async def path_from_first_to_second(
 
 @router.get("/many", response_model=ManyArticlePaths)
 async def paths_from_first(src: str, dsts: list[str], db: Session = Depends(database.get_db)):
+    """
+    Find a shortest path from src to each destination in dsts.
+
+    :param src: starting article
+    :param dsts: a list of ending articles
+    :return: a shortest path from src to dst for all dsts in dst
+    """
     paths: dict[str, Optional[ArticlePath]] = {}
     ppd = multi_target_bfs(db, src)
     for dst in dsts:

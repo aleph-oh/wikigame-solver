@@ -1,3 +1,7 @@
+"""
+This module contains the models which declare the structure of the database used for storing
+the article graph.
+"""
 from typing import Iterable
 
 from sqlalchemy import Column, ForeignKey, Integer, Text
@@ -9,6 +13,10 @@ __all__ = ["Article", "Link"]
 
 
 class Link(Base):
+    """
+    A link between two articles.
+    """
+
     __tablename__ = "link"
 
     id = Column(Integer, primary_key=True)
@@ -17,6 +25,10 @@ class Link(Base):
 
 
 class Article(Base):
+    """
+    A singular article.
+    """
+
     __tablename__ = "article"
 
     id = Column(Integer, primary_key=True)

@@ -1,3 +1,7 @@
+#!/usr/bin/env python3
+"""
+Start the server backing the web API.
+"""
 import uvicorn  # type: ignore
 from fastapi import FastAPI
 

@@ -1,3 +1,6 @@
+"""
+This module contains schemas for providing responses to API requests.
+"""
 from typing import Optional
 
 from pydantic import BaseModel, Field, HttpUrl
