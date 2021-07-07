@@ -3,7 +3,7 @@ This module contains routing functions implementing the web API.
 """
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 import database
@@ -16,17 +16,18 @@ router = APIRouter()
 
 @router.get(
     "/single",
+    summary="Paths From One Start to One Endpoint",
     responses={status.HTTP_404_NOT_FOUND: {"msg": str}},
     response_model=ArticlePath,
 )
-async def path_from_src_to_dst(src: str, dst: str, db: Session = Depends(database.get_db)):
+async def path_from_src_to_dst(
+    src: str = Query(..., description="starting article"),
+    dst: str = Query(..., description="destination article"),
+    db: Session = Depends(database.get_db),
+):
     """
-    Find a path of articles which minimizes the number of clicks starting from src and ending
-    at dst.
-
-    :param src: starting article
-    :param dst: ending article
-    :return: a shortest path from src to dst
+    Find a path of articles which minimizes the number of clicks starting from ``src``
+    and ending at ``dst``.
     """
     try:
         path = single_target_bfs(db, src, dst)
@@ -54,14 +55,17 @@ async def path_from_src_to_dst(src: str, dst: str, db: Session = Depends(databas
     return ArticlePath(articles=article_path)
 
 
-@router.get("/many", response_model=ManyArticlePaths)
-async def paths_from_first(src: str, dsts: list[str], db: Session = Depends(database.get_db)):
+@router.get(
+    "/many", summary="Paths from One Start To Many Endpoints", response_model=ManyArticlePaths
+)
+async def paths_from_src(
+    src: str = Query(..., description="starting article"),
+    dsts: list[str] = Query(..., description="destination articles"),
+    db: Session = Depends(database.get_db),
+):
     """
-    Find a shortest path from src to each destination in dsts.
-
-    :param src: starting article
-    :param dsts: a list of ending articles
-    :return: a shortest path from src to dst for all dsts in dst
+    Find a shortest path from ``src`` to each destination in ``dsts``, where a shortest path
+    minimizes the number of clicks between two articles.
     """
     paths: dict[str, Optional[ArticlePath]] = {}
     ppd = multi_target_bfs(db, src)
