@@ -36,7 +36,7 @@ jobs:
       - name: Install dependencies
         run: poetry install
 
-      - name: Run Black code formatter
+      - name: Check formatting with Black code formatter
         run: poetry run black . --check
 
       - name: Check with mypy
