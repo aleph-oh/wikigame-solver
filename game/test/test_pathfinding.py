@@ -2,13 +2,13 @@ import random
 from typing import Mapping, Optional, cast
 
 import pytest
-from hypothesis.strategies import SearchStrategy
+from hypothesis import example, given, strategies as st
+from hypothesis.strategies import DataObject, SearchStrategy
 from sqlalchemy.orm import Session
 
 from database import Article, Link
 from .utilities import db_safe_ints, session_scope
-from ..pathfinding import follow_parent_pointers, single_target_bfs, multi_target_bfs
-from hypothesis import example, given, strategies as st
+from ..pathfinding import follow_parent_pointers, multi_target_bfs, single_target_bfs
 
 pytestmark = [pytest.mark.game]
 
