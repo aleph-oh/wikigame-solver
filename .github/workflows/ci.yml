@@ -24,7 +24,7 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-      
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
@@ -32,15 +32,15 @@ jobs:
 
       - name: Install Poetry
         run: pip install poetry
-                
+
       - name: Install dependencies
         run: poetry install
-        
+
       - name: Run Black code formatter
-        run: poetry run black .
-        
+        run: poetry run black . --check
+
       - name: Check with mypy
         run: poetry run mypy .
-        
+
       - name: Check with pytest
         run: poetry run pytest .

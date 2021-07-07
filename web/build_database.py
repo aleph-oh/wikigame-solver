@@ -1,10 +1,10 @@
 from typing import Iterable, cast
 
-from sqlalchemy.orm import Session as SessionTy
-
 import pywikibot  # type: ignore
 from pywikibot.pagegenerators import PreloadingGenerator  # type: ignore
-from database import Session, Article, Link
+from sqlalchemy.orm import Session as SessionTy
+
+from database import Article, Link, Session
 from database.constants import Base, engine
 
 __all__ = ["populate_db", "clear_db"]

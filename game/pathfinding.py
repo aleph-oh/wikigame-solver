@@ -4,7 +4,7 @@ from typing import Mapping, Optional, cast
 from sqlalchemy.orm import Session as SessionTy
 
 from database import Article
-from .utilities import title_to_id, id_to_title
+from .utilities import id_to_title, title_to_id
 
 __all__ = ["single_target_bfs", "multi_target_bfs", "follow_parent_pointers"]
 
@@ -14,9 +14,7 @@ IDPath = list[int]
 TitlePath = list[str]
 
 
-def single_target_bfs(
-    db: SessionTy, src_title: str, dst_title: str
-) -> Optional[TitlePath]:
+def single_target_bfs(db: SessionTy, src_title: str, dst_title: str) -> Optional[TitlePath]:
     """
     Given a graph represented in the database which session ``db`` accesses, find the shortest
     path from the article with title ``src_title`` to the article with title ``dst_title``, or
@@ -27,6 +25,7 @@ def single_target_bfs(
     :param dst_title: title of the article to end at
     :return: a shortest path starting from src_title and ending at dst_title,
             or None if no such path exists
+    :raises ValueError: if either src_id or dst_id cannot be found from a title
     """
     src_id = title_to_id(db, src_title)
     dst_id = title_to_id(db, dst_title)

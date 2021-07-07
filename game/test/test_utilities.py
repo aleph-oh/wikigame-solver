@@ -5,9 +5,8 @@ from hypothesis import given, reject, strategies as st
 from sqlalchemy.orm import Session
 
 from database import Article
+from game.utilities import id_to_title, title_to_id
 from .utilities import db_safe_ints, session_scope
-
-from game.utilities import title_to_id, id_to_title
 
 pytestmark = [pytest.mark.game]
 

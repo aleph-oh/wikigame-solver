@@ -20,9 +20,7 @@ def parents_and_dst(
     def replace_one_with_none(d: dict[int, int]) -> Mapping[int, Optional[int]]:
         if not d:
             return d
-        result = cast(dict[int, Optional[int]], d) | {
-            random.choice(list(d.keys())): None
-        }
+        result = cast(dict[int, Optional[int]], d) | {random.choice(list(d.keys())): None}
         return result
 
     keys: set[int] = draw(st.sets(st.integers(), min_size=1, max_size=max_size))
@@ -68,9 +66,7 @@ def adjacency_lists(
     )
     keys_list = list(keys)
     return draw(
-        st.fixed_dictionaries(
-            {k: st.sets(st.sampled_from(keys_list)) for k in keys}
-        ).filter(
+        st.fixed_dictionaries({k: st.sets(st.sampled_from(keys_list)) for k in keys}).filter(
             lambda d: min_edges <= sum(len(edges) for edges in d.values()) <= max_edges
         )
     )
@@ -89,9 +85,7 @@ def two_nodes_and_graph(
         )
     )
     nodes = list(graph.keys())
-    return draw(
-        st.tuples(st.just(graph), st.sampled_from(nodes), st.sampled_from(nodes))
-    )
+    return draw(st.tuples(st.just(graph), st.sampled_from(nodes), st.sampled_from(nodes)))
 
 
 def add_graph_to_db(session: Session, graph: Mapping[int, set[int]]) -> None:
@@ -108,9 +102,7 @@ def add_graph_to_db(session: Session, graph: Mapping[int, set[int]]) -> None:
 
 
 @given(inputs=two_nodes_and_graph())
-def test_single_multi_target_equivalent(
-    inputs: tuple[Mapping[int, set[int]], int, int]
-):
+def test_single_multi_target_equivalent(inputs: tuple[Mapping[int, set[int]], int, int]):
     graph, src, dst = inputs
     with session_scope() as session:
         add_graph_to_db(session, graph)

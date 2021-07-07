@@ -1,9 +1,9 @@
 from contextlib import contextmanager
+
 from hypothesis import strategies as st
 
 from database.constants import Base
 from database.test.utilities import TestSession, test_engine
-
 
 __all__ = ["session_scope", "db_safe_ints"]
 

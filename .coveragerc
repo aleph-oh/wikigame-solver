@@ -1,0 +1,5 @@
+[run]
+omit =
+    */test/*
+    */__main__.py
+    web/build_database.py
