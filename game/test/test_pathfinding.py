@@ -2,11 +2,10 @@
 This module contains tests for pathfinding functions in the game.pathfinding module.
 """
 import random
-from typing import Iterable, Mapping, Optional, cast
+from typing import Callable, Iterable, Mapping, Optional, TypeVar, cast
 
 import pytest
 from hypothesis import example, given, strategies as st
-from hypothesis.strategies import DataObject
 from sqlalchemy.orm import Session
 
 from database import Article, Link
@@ -15,9 +14,12 @@ from ..pathfinding import follow_parent_pointers, multi_target_bfs, single_targe
 
 pytestmark = [pytest.mark.game]
 
+Ex = TypeVar("Ex")
+DrawFn = Callable[[st.SearchStrategy[Ex]], Ex]
+
 
 @st.composite
-def parents_and_dst(draw, max_size=100) -> tuple[Mapping[int, Optional[int]], int]:
+def parents_and_dst(draw: DrawFn, max_size=100) -> tuple[Mapping[int, Optional[int]], int]:
     """
     Generates parent pointer dictionaries for simple graphs and
     a destination to follow parent pointers from.
@@ -70,7 +72,7 @@ def test_follow_parent_pointers_recurrence(parents_dst):
 
 @st.composite
 def adjacency_lists(
-    draw, min_nodes=0, max_nodes=100, min_edges=0, max_edges=10000
+    draw: DrawFn, min_nodes=0, max_nodes=100, min_edges=0, max_edges=10000
 ) -> Mapping[int, Iterable[int]]:
     """
     Generates adjacency list representations of graphs, constrained by the properties
@@ -101,7 +103,7 @@ def adjacency_lists(
 
 @st.composite
 def graph_and_two_nodes(
-    draw, min_nodes=1, max_nodes=100, min_edges=0, max_edges=10000
+    draw: DrawFn, min_nodes=1, max_nodes=100, min_edges=0, max_edges=10000
 ) -> tuple[Mapping[int, Iterable[int]], int, int]:
     """
     Generates adjacency list representations of graphs as in ``adjacency_lists``,
@@ -160,7 +162,7 @@ def test_single_multi_target_equivalent(inputs: tuple[Mapping[int, Iterable[int]
 
 @given(inputs=graph_and_two_nodes(max_nodes=25, max_edges=300), data=st.data())
 def test_single_target_optimal_substructure(
-    inputs: tuple[Mapping[int, set[int]], int, int], data: DataObject
+    inputs: tuple[Mapping[int, set[int]], int, int], data: st.DataObject
 ) -> None:
     graph, src, dst = inputs
     with session_scope() as session:
