@@ -33,7 +33,6 @@ class MockArticle:
 class MockLink:
     """Mock database link."""
 
-    id: int
     src: int
     dst: int
 
@@ -63,7 +62,7 @@ class DatabaseInteractions(RuleBasedStateMachine):
     def __init__(self) -> None:
         super().__init__()
         self.articles: dict[int, MockArticle] = {}
-        self.links: dict[int, MockLink] = {}
+        self.links: dict[tuple[int, int], MockLink] = {}
         self.assoc_links: dict[MockArticle, set[MockLink]] = defaultdict(set)
         self.db: Session = TestSession()
         init_tables()
@@ -95,25 +94,23 @@ class DatabaseInteractions(RuleBasedStateMachine):
 
     @rule(
         target=added_links,
-        id_=st.integers(min_value=MIN_SQLITE_INT, max_value=MAX_SQLITE_INT),
         src=added_articles,
         dst=added_articles,
     )
-    def create_link(self, id_: int, src: MockArticle, dst: MockArticle) -> MockLink:
+    def create_link(self, src: MockArticle, dst: MockArticle) -> MockLink:
         """
         Create a new link and add it to the database, returning a corresponding mock value
         for storage in the model.
 
-        :param id_: id of the link
         :param src: origin of the link
         :param dst: destination of the link
         :return: a mock link with same field values as those of the inserted link
         """
-        assume(id_ not in self.links)
+        assume((src.id, dst.id) not in self.links)
         assume(src != dst)
-        link = MockLink(id=id_, src=src.id, dst=dst.id)
-        self.links[id_] = link
-        db_link = Link(id=id_, src=src.id, dst=dst.id)
+        link = MockLink(src=src.id, dst=dst.id)
+        self.links[(src.id, dst.id)] = link
+        db_link = Link(src=src.id, dst=dst.id)
         self.db.add(db_link)
         self.db.commit()
         self.assoc_links[src].add(link)
@@ -130,7 +127,7 @@ class DatabaseInteractions(RuleBasedStateMachine):
         assert db_article is not None
         assert expected_neighbors == set(
             map(
-                lambda link: MockLink(id=link.id, src=link.src, dst=link.dst),
+                lambda link: MockLink(src=link.src, dst=link.dst),
                 db_article.links,
             )
         )
@@ -141,10 +138,10 @@ class DatabaseInteractions(RuleBasedStateMachine):
         Read counterpart to ``link`` from database and check that database performs
         as model expects.
         """
-        db_link: Optional[Link] = self.db.query(Link).get(link.id)
+        db_link: Optional[Link] = self.db.query(Link).get((link.src, link.dst))
         assert db_link is not None
-        assert self.links[link.id].src == db_link.src
-        assert self.links[link.id].dst == db_link.dst
+        assert self.links[(link.src, link.dst)].src == db_link.src
+        assert self.links[(link.src, link.dst)].dst == db_link.dst
 
     def teardown(self) -> None:
         """
