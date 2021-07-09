@@ -3,7 +3,7 @@ This module contains pathfinding functions which use the article graph database 
 shortest paths between articles.
 """
 from collections import deque
-from typing import Literal, Mapping, Optional, cast
+from typing import Mapping, Optional, cast
 
 from sqlalchemy.orm import Session as SessionTy
 
@@ -46,6 +46,17 @@ def single_target_bfs(db: SessionTy, src_title: str, dst_title: str) -> Optional
 
 
 def bidi_bfs(db: SessionTy, src_title: str, dst_title: str) -> Optional[TitlePath]:
+    """
+    Identical semantics to ``single_target_bfs``; should have better performance when the in-
+    and out-degree of articles is similar, given that Wikipedia is inherently a large graph.
+
+    :param db: database session
+    :param src_title: title of the article to start from
+    :param dst_title: title of the article to end at
+    :return: a shortest path starting from src_title and ending at dst_title,
+            or None if no such path exists
+    :raises ValueError: if either src_id or dst_id cannot be found from a title
+    """
     if src_title == dst_title:
         return [src_title]
     src_id = title_to_id(db, src_title)
@@ -57,6 +68,7 @@ def bidi_bfs(db: SessionTy, src_title: str, dst_title: str) -> Optional[TitlePat
     done = False
     while fwq_q and rev_q:
         # TODO: refactor this to clean it up; basically identical code here
+        # TODO: compare to BFS where you expand the smaller queue at each step
         if done:
             break
         article_id = fwq_q.popleft()
