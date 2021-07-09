@@ -34,4 +34,7 @@ class Article(Base):
 
     id = Column(Integer, primary_key=True)
     title = Column(Text, nullable=False)
-    links: Iterable["Link"] = relationship("Link", backref="origin", foreign_keys=[Link.src])
+    in_links: Iterable[Link] = relationship(
+        "Link", backref="destination", foreign_keys=[Link.dst]
+    )
+    out_links: Iterable[Link] = relationship("Link", backref="origin", foreign_keys=[Link.src])

@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from database import Article, Link
 from .utilities import db_safe_ints, session_scope
-from ..pathfinding import follow_parent_pointers, multi_target_bfs, single_target_bfs
+from ..pathfinding import follow_parent_pointers, bidi_bfs, multi_target_bfs, single_target_bfs
 
 pytestmark = [pytest.mark.game]
 
@@ -138,7 +138,7 @@ def add_graph_to_db(session: Session, graph: Mapping[int, Iterable[int]]) -> Non
             Article(
                 id=node_id,
                 title=str(node_id),
-                links=[Link(src=node_id, dst=other_id) for other_id in adjacent],
+                out_links=[Link(src=node_id, dst=other_id) for other_id in adjacent],
                 # type: ignore
             )
         )
@@ -157,7 +157,7 @@ def test_single_multi_target_equivalent(inputs: tuple[Mapping[int, Iterable[int]
             assert single_target_via_pp is None
         else:
             assert single_target_via_pp is not None
-            assert single_target_result == list(map(str, single_target_via_pp))
+            assert len(single_target_result) == len(single_target_via_pp)
 
 
 @given(inputs=graph_and_two_nodes(max_nodes=25, max_edges=300), data=st.data())
@@ -185,3 +185,20 @@ def test_single_target_optimal_substructure(
         subpath = single_target_bfs(session, sub_src, sub_dst)
         assert subpath is not None
         assert len(path[sub_start_i : sub_end_i + 1]) == len(subpath)
+
+
+@given(inputs=graph_and_two_nodes(max_nodes=25, max_edges=300))
+@example(inputs=({0: {0}}, 0, 0))
+@example(inputs=({-2: {1}, -1: set(), 0: {2}, 1: {-2, 2}, 2: set(), 3: set()}, 1, 2))
+@example(inputs=({-1: {0}, 0: set(), 1: set()}, 1, 0))
+def test_uni_bidi_equivalent(inputs: tuple[Mapping[int, Iterable[int]], int, int]):
+    graph, src, dst = inputs
+    with session_scope() as session:
+        add_graph_to_db(session, graph)
+        uni_path = single_target_bfs(session, str(src), str(dst))
+        bidi_path = bidi_bfs(session, str(src), str(dst))
+        if uni_path is None:
+            assert bidi_path is None
+        else:
+            assert bidi_path is not None, f"Got unidirectional path {uni_path}"
+            assert len(uni_path) == len(bidi_path), (uni_path, bidi_path)
