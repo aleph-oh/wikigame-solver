@@ -128,7 +128,7 @@ class DatabaseInteractions(RuleBasedStateMachine):
         assert expected_neighbors == set(
             map(
                 lambda link: MockLink(src=link.src, dst=link.dst),
-                db_article.links,
+                db_article.out_links,
             )
         )
 
