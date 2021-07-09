@@ -2,16 +2,16 @@
 This module contains tests for pathfinding functions in the game.pathfinding module.
 """
 import random
-from typing import Callable, Iterable, Mapping, Optional, TypeVar, cast
+from typing import Callable, Mapping, Optional, TypeVar, cast
 
 import pytest
 import networkx as nx
-from hypothesis import example, given, strategies as st
+from hypothesis import example, given, strategies as st, note
 from hypothesis_networkx import graph_builder
 from sqlalchemy.orm import Session
 
 from database import Article, Link
-from .utilities import db_safe_ints, session_scope
+from .utilities import session_scope
 from ..pathfinding import follow_parent_pointers, bidi_bfs, multi_target_bfs, single_target_bfs
 
 pytestmark = [pytest.mark.game]
@@ -73,67 +73,6 @@ def test_follow_parent_pointers_recurrence(parents_dst):
 
 
 @st.composite
-def adjacency_lists(
-    draw: DrawFn, min_nodes=0, max_nodes=100, min_edges=0, max_edges=10000
-) -> Mapping[int, Iterable[int]]:
-    """
-    Generates adjacency list representations of graphs, constrained by the properties
-    passed in.
-
-    :param draw: used to sample values
-    :param min_nodes: minimum number of nodes
-    :param max_nodes: maximum number of nodes
-    :param min_edges: minimum number of edges
-    :param max_edges: maximum number of edges
-    :return: adjacency list representation of a graph
-    """
-    keys: set[int] = draw(
-        st.sets(
-            db_safe_ints,
-            min_size=min_nodes,
-            max_size=max_nodes,
-        )
-    )
-    keys_list = list(keys)
-    graph = draw(
-        st.fixed_dictionaries({k: st.sets(st.sampled_from(keys_list)) for k in keys}).filter(
-            lambda d: min_edges <= sum(len(edges) for edges in d.values()) <= max_edges
-        )
-    )
-    return graph
-
-
-@st.composite
-def graph_and_two_nodes(
-    draw: DrawFn, min_nodes=1, max_nodes=100, min_edges=0, max_edges=10000
-) -> tuple[Mapping[int, Iterable[int]], int, int]:
-    """
-    Generates adjacency list representations of graphs as in ``adjacency_lists``,
-    while also returning two nodes in the graph.
-
-    :param draw: used to sample values
-    :param min_nodes: minimum number of nodes
-    :param max_nodes: maximum number of nodes
-    :param min_edges: minimum number of edges
-    :param max_edges: maximum number of edges
-    :return: adjacency list representation of a graph, and two not necessarily distinct nodes
-             in the graph
-    """
-    graph = draw(
-        adjacency_lists(
-            min_nodes=min_nodes,
-            max_nodes=max_nodes,
-            min_edges=min_edges,
-            max_edges=max_edges,
-        )
-    )
-    nodes = list(graph.keys())
-    src = draw(st.sampled_from(nodes))
-    dst = draw(st.sampled_from(nodes))
-    return graph, src, dst
-
-
-@st.composite
 def nx_graph_and_two_nodes(
     draw: DrawFn, min_nodes=1, max_nodes=10000, min_edges=0, max_edges=500_000, connected=True
 ) -> tuple[nx.DiGraph, int, int]:
@@ -150,7 +89,7 @@ def nx_graph_and_two_nodes(
     :return: NetworkX representation of graph, and 2 nodes in that graph
     """
     builder = cast(
-        st.SearchStrategy[nx.Digraph],
+        st.SearchStrategy[nx.DiGraph],
         graph_builder(
             min_nodes=min_nodes,
             max_nodes=max_nodes,
@@ -178,25 +117,13 @@ def add_nx_graph_to_db(session: Session, graph: nx.DiGraph) -> None:
     session.commit()
 
 
-def add_graph_to_db(session: Session, graph: Mapping[int, Iterable[int]]) -> None:
-    """Add the provided graph to the database attached to ``session``."""
-    for node_id, adjacent in graph.items():
-        session.add(
-            Article(
-                id=node_id,
-                title=str(node_id),
-                out_links=[Link(src=node_id, dst=other_id) for other_id in adjacent],
-                # type: ignore
-            )
-        )
-    session.commit()
-
-
-@given(inputs=graph_and_two_nodes(max_nodes=25, max_edges=300))
-def test_single_multi_target_equivalent(inputs: tuple[Mapping[int, Iterable[int]], int, int]):
+@given(inputs=nx_graph_and_two_nodes(connected=False))
+def test_single_multi_target_equivalent(inputs: tuple[nx.DiGraph, int, int]):
     graph, src, dst = inputs
+    adj_list_rep = {n: set(graph[n]) for n in graph}
+    note(f"Graph: {adj_list_rep}")
     with session_scope() as session:
-        add_graph_to_db(session, graph)
+        add_nx_graph_to_db(session, graph)
         single_target_result = single_target_bfs(session, str(src), str(dst))
         multi_target_ppd = multi_target_bfs(session, str(src))
         single_target_via_pp = follow_parent_pointers(dst, multi_target_ppd)
@@ -207,13 +134,15 @@ def test_single_multi_target_equivalent(inputs: tuple[Mapping[int, Iterable[int]
             assert len(single_target_result) == len(single_target_via_pp)
 
 
-@given(inputs=graph_and_two_nodes(max_nodes=25, max_edges=300), data=st.data())
+@given(inputs=nx_graph_and_two_nodes(connected=False), data=st.data())
 def test_single_target_optimal_substructure(
-    inputs: tuple[Mapping[int, set[int]], int, int], data: st.DataObject
+    inputs: tuple[nx.DiGraph, int, int], data: st.DataObject
 ) -> None:
     graph, src, dst = inputs
+    adj_list_rep = {n: set(graph[n]) for n in graph}
+    note(f"Graph: {adj_list_rep}")
     with session_scope() as session:
-        add_graph_to_db(session, graph)
+        add_nx_graph_to_db(session, graph)
         path = single_target_bfs(session, str(src), str(dst))
         if path is None:
             return
@@ -234,14 +163,25 @@ def test_single_target_optimal_substructure(
         assert len(path[sub_start_i : sub_end_i + 1]) == len(subpath)
 
 
-@given(inputs=graph_and_two_nodes(max_nodes=25, max_edges=300))
-@example(inputs=({0: {0}}, 0, 0))
-@example(inputs=({-2: {1}, -1: set(), 0: {2}, 1: {-2, 2}, 2: set(), 3: set()}, 1, 2))
-@example(inputs=({-1: {0}, 0: set(), 1: set()}, 1, 0))
-def test_uni_bidi_equivalent(inputs: tuple[Mapping[int, Iterable[int]], int, int]) -> None:
+def is_valid_path(path: list[str], graph: nx.Graph) -> bool:
+    """
+    :return: true if all edges in path exist in provided graph, false otherwise
+    """
+    int_path: list[int] = [int(id_) for id_ in path]
+    if not int_path or (len(int_path) == 1 and int_path[0] not in graph):
+        return False
+    return all((int_path[i], int_path[i + 1]) in graph.edges for i in range(len(int_path) - 1))
+
+
+@given(inputs=nx_graph_and_two_nodes(connected=False))
+@example(inputs=(nx.DiGraph([(0, 0)]), 0, 0))
+@example(inputs=(nx.DiGraph([(-2, 1), (0, 2), (1, -2), (1, 2)]), 1, 2))
+def test_uni_bidi_equivalent(inputs: tuple[nx.DiGraph, int, int]) -> None:
     graph, src, dst = inputs
+    adj_list_rep = {n: set(graph[n]) for n in graph}
+    note(f"Graph: {adj_list_rep}")
     with session_scope() as session:
-        add_graph_to_db(session, graph)
+        add_nx_graph_to_db(session, graph)
         uni_path = single_target_bfs(session, str(src), str(dst))
         bidi_path = bidi_bfs(session, str(src), str(dst))
         if uni_path is None:
@@ -251,18 +191,22 @@ def test_uni_bidi_equivalent(inputs: tuple[Mapping[int, Iterable[int]], int, int
             assert len(uni_path) == len(bidi_path), (uni_path, bidi_path)
 
 
-@given(inputs=nx_graph_and_two_nodes(max_nodes=25, max_edges=300))
+@given(inputs=nx_graph_and_two_nodes(connected=False))
 def test_fuzz_bidi(inputs: tuple[nx.DiGraph, int, int]) -> None:
     graph, src, dst = inputs
+    adj_list_rep = {n: set(graph[n]) for n in graph}
+    note(f"Graph: {adj_list_rep}")
     with session_scope() as session:
         add_nx_graph_to_db(session, graph)
         # should never throw: src_id and dst_id can be found from given titles
         bidi_bfs(session, str(src), str(dst))
 
 
-@given(inputs=nx_graph_and_two_nodes())
+@given(inputs=nx_graph_and_two_nodes(connected=False))
 def test_bidi_nx_same(inputs: tuple[nx.DiGraph, int, int]) -> None:
     graph, src, dst = inputs
+    adj_list_rep = {n: set(graph[n]) for n in graph}
+    note(f"Graph: {adj_list_rep}")
     with session_scope() as session:
         add_nx_graph_to_db(session, graph)
         try:
@@ -272,4 +216,5 @@ def test_bidi_nx_same(inputs: tuple[nx.DiGraph, int, int]) -> None:
         else:
             bidi_path = bidi_bfs(session, str(src), str(dst))
             assert bidi_path is not None
+            assert is_valid_path(bidi_path, graph)
             assert len(nx_path) == len(bidi_path)
