@@ -4,15 +4,15 @@ This module contains tests for pathfinding functions in the game.pathfinding mod
 import random
 from typing import Callable, Mapping, Optional, TypeVar, cast
 
+import networkx as nx  # type: ignore
 import pytest
-import networkx as nx
-from hypothesis import example, given, strategies as st, note
-from hypothesis_networkx import graph_builder
+from hypothesis import example, given, note, strategies as st
+from hypothesis_networkx import graph_builder  # type: ignore
 from sqlalchemy.orm import Session
 
 from database import Article, Link
 from .utilities import session_scope
-from ..pathfinding import follow_parent_pointers, bidi_bfs, multi_target_bfs, single_target_bfs
+from ..pathfinding import bidi_bfs, follow_parent_pointers, multi_target_bfs, single_target_bfs
 
 pytestmark = [pytest.mark.game]
 
