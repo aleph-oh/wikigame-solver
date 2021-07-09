@@ -62,7 +62,7 @@ def bidi_bfs(db: SessionTy, src_title: str, dst_title: str) -> Optional[TitlePat
     src_id = title_to_id(db, src_title)
     dst_id = title_to_id(db, dst_title)
     fwd_parents: ParentDict = {src_id: None}
-    rev_children: ParentDict = {dst_id: None}
+    rev_parents: ParentDict = {dst_id: None}
     fwq_q = deque([src_id])
     rev_q = deque([dst_id])
     done = False
@@ -76,7 +76,7 @@ def bidi_bfs(db: SessionTy, src_title: str, dst_title: str) -> Optional[TitlePat
         assert db_article is not None
         for link in db_article.out_links:
             linked_to = link.dst
-            if linked_to in rev_children:
+            if linked_to in rev_parents:
                 fwd_parents[linked_to] = article_id
                 done = True
                 break
@@ -91,11 +91,11 @@ def bidi_bfs(db: SessionTy, src_title: str, dst_title: str) -> Optional[TitlePat
         for link in db_article.in_links:
             linked_from = link.src
             if linked_from in fwd_parents:
-                rev_children[linked_from] = article_id
+                rev_parents[linked_from] = article_id
                 done = True
                 break
-            elif linked_from not in rev_children:
-                rev_children[linked_from] = article_id
+            elif linked_from not in rev_parents:
+                rev_parents[linked_from] = article_id
                 rev_q.append(linked_from)
     else:
         if dst_id in fwd_parents:
@@ -103,22 +103,22 @@ def bidi_bfs(db: SessionTy, src_title: str, dst_title: str) -> Optional[TitlePat
             if path is None:
                 return None
             return _id_path_to_title_path(db, path)
-        if src_id in rev_children:
-            path = follow_parent_pointers(src_id, rev_children)
+        if src_id in rev_parents:
+            path = follow_parent_pointers(src_id, rev_parents)
             if path is None:
                 return None
             return _id_path_to_title_path(db, path[::-1])
-    common = fwd_parents.keys() & rev_children.keys()
+    common = fwd_parents.keys() & rev_parents.keys()
     if not common:
         return None
     assert (
-        fwd_parents[src_id] is None and rev_children[dst_id] is None
+        fwd_parents[src_id] is None and rev_parents[dst_id] is None
     ), "expected not to assign to already-initialized values"
     common_node = common.pop()
     src_to_common = follow_parent_pointers(common_node, fwd_parents)
     if src_to_common is None:
         return None
-    common_to_dst = follow_parent_pointers(common_node, rev_children)
+    common_to_dst = follow_parent_pointers(common_node, rev_parents)
     if common_to_dst is None:
         return None
     shortest_path = src_to_common[:-1] + common_to_dst[::-1]

@@ -2,4 +2,4 @@
 omit =
     */test/*
     */__main__.py
-    web/build_database.py
+    article_retrieval/database_builder.py

@@ -5,7 +5,9 @@ import random
 from typing import Callable, Iterable, Mapping, Optional, TypeVar, cast
 
 import pytest
+import networkx as nx
 from hypothesis import example, given, strategies as st
+from hypothesis_networkx import graph_builder
 from sqlalchemy.orm import Session
 
 from database import Article, Link
@@ -131,6 +133,51 @@ def graph_and_two_nodes(
     return graph, src, dst
 
 
+@st.composite
+def nx_graph_and_two_nodes(
+    draw: DrawFn, min_nodes=1, max_nodes=10000, min_edges=0, max_edges=500_000, connected=True
+) -> tuple[nx.DiGraph, int, int]:
+    """
+    Generates NetworkX representations of graphs while also returning 2 nodes in the graph.
+
+    :param draw: used to sample values
+    :param min_nodes: minimum number of nodes
+    :param max_nodes: maximum number of nodes
+    :param min_edges: minimum number of edges
+    :param max_edges: maximum number of edges
+    :param connected: if the graph should be guaranteed to be weakly connected;
+                    if True, requires max_edges >= min_nodes - 1
+    :return: NetworkX representation of graph, and 2 nodes in that graph
+    """
+    builder = cast(
+        st.SearchStrategy[nx.Digraph],
+        graph_builder(
+            min_nodes=min_nodes,
+            max_nodes=max_nodes,
+            min_edges=min_edges,
+            max_edges=max_edges,
+            graph_type=nx.DiGraph,
+            connected=connected,
+        ),
+    )
+    graph = draw(builder)
+    nodes = list(graph.nodes)
+    src = draw(st.sampled_from(nodes))
+    dst = draw(st.sampled_from(nodes))
+    return graph, src, dst
+
+
+def add_nx_graph_to_db(session: Session, graph: nx.DiGraph) -> None:
+    """Add the provided networkx graph to the database attached to ``session``."""
+    for n in graph:
+        session.add(
+            Article(
+                id=n, title=str(n), out_links=[Link(src=n, dst=m) for m in graph[n]]
+            )  # type: ignore
+        )
+    session.commit()
+
+
 def add_graph_to_db(session: Session, graph: Mapping[int, Iterable[int]]) -> None:
     """Add the provided graph to the database attached to ``session``."""
     for node_id, adjacent in graph.items():
@@ -204,10 +251,25 @@ def test_uni_bidi_equivalent(inputs: tuple[Mapping[int, Iterable[int]], int, int
             assert len(uni_path) == len(bidi_path), (uni_path, bidi_path)
 
 
-@given(inputs=graph_and_two_nodes(max_nodes=25, max_edges=300))
-def test_fuzz_bidi(inputs: tuple[Mapping[int, Iterable[int]], int, int]) -> None:
+@given(inputs=nx_graph_and_two_nodes(max_nodes=25, max_edges=300))
+def test_fuzz_bidi(inputs: tuple[nx.DiGraph, int, int]) -> None:
     graph, src, dst = inputs
     with session_scope() as session:
-        add_graph_to_db(session, graph)
+        add_nx_graph_to_db(session, graph)
         # should never throw: src_id and dst_id can be found from given titles
         bidi_bfs(session, str(src), str(dst))
+
+
+@given(inputs=nx_graph_and_two_nodes())
+def test_bidi_nx_same(inputs: tuple[nx.DiGraph, int, int]) -> None:
+    graph, src, dst = inputs
+    with session_scope() as session:
+        add_nx_graph_to_db(session, graph)
+        try:
+            nx_path = nx.shortest_path(graph, src, dst)
+        except nx.NetworkXNoPath:
+            assert bidi_bfs(session, str(src), str(dst)) is None
+        else:
+            bidi_path = bidi_bfs(session, str(src), str(dst))
+            assert bidi_path is not None
+            assert len(nx_path) == len(bidi_path)
