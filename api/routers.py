@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 import database
-from game.pathfinding import follow_parent_pointers, multi_target_bfs, single_target_bfs
+from game.pathfinding import follow_parent_pointers, multi_target_bfs, bidi_bfs
 from game.utilities import id_to_title, title_to_id
 from .schemas import ArticlePath, ArticleWrapper, ManyArticlePaths
 
@@ -30,7 +30,7 @@ async def path_from_src_to_dst(
     and ending at ``dst``.
     """
     try:
-        path = single_target_bfs(db, src, dst)
+        path = bidi_bfs(db, src, dst)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

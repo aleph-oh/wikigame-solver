@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session as SessionTy
 from database import Article
 from .utilities import id_to_title, title_to_id
 
-__all__ = ["single_target_bfs", "bidi_bfs", "multi_target_bfs", "follow_parent_pointers"]
+__all__ = ["bidi_bfs", "multi_target_bfs", "follow_parent_pointers"]
 
 ParentMapping = Mapping[int, Optional[int]]
 ParentDict = dict[int, Optional[int]]
@@ -18,37 +18,11 @@ IDPath = list[int]
 TitlePath = list[str]
 
 
-def single_target_bfs(db: SessionTy, src_title: str, dst_title: str) -> Optional[TitlePath]:
+def bidi_bfs(db: SessionTy, src_title: str, dst_title: str) -> Optional[TitlePath]:
     """
     Given a graph represented in the database which session ``db`` accesses, find the shortest
     path from the article with title ``src_title`` to the article with title ``dst_title``, or
     None if no such path exists.
-
-    :param db: database session
-    :param src_title: title of the article to start from
-    :param dst_title: title of the article to end at
-    :return: a shortest path starting from src_title and ending at dst_title,
-            or None if no such path exists
-    :raises ValueError: if either src_id or dst_id cannot be found from a title
-    """
-    src_id = title_to_id(db, src_title)
-    dst_id = title_to_id(db, dst_title)
-    parents: ParentDict = {src_id: None}
-    q: deque[int] = deque([src_id])
-    while q and dst_id not in parents:
-        q, parents = _bfs_update_step(db, q, parents)
-    if dst_id not in parents:
-        return None
-    assert parents[src_id] is None
-    shortest_path = follow_parent_pointers(dst_id, parents)
-    assert shortest_path is not None
-    return [id_to_title(db, id_) for id_ in shortest_path]
-
-
-def bidi_bfs(db: SessionTy, src_title: str, dst_title: str) -> Optional[TitlePath]:
-    """
-    Identical semantics to ``single_target_bfs``; should have better performance when the in-
-    and out-degree of articles is similar, given that Wikipedia is inherently a large graph.
 
     :param db: database session
     :param src_title: title of the article to start from

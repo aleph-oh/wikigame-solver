@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from database import Article, Link
 from .utilities import session_scope
-from ..pathfinding import bidi_bfs, follow_parent_pointers, multi_target_bfs, single_target_bfs
+from ..pathfinding import bidi_bfs, follow_parent_pointers, multi_target_bfs
 
 pytestmark = [pytest.mark.game]
 
@@ -51,12 +51,6 @@ def parents_and_dst(draw: DrawFn, max_size=100) -> tuple[Mapping[int, Optional[i
     )
     dst_id: int = draw(st.sampled_from(keys_list))
     return parents, dst_id
-
-
-@given(parents_dst=parents_and_dst())
-def test_fuzz_follow_parent_pointers(parents_dst):
-    parents, dst_id = parents_dst
-    follow_parent_pointers(dst_id=dst_id, parents=parents)
 
 
 @given(parents_dst=parents_and_dst())
@@ -117,52 +111,6 @@ def add_nx_graph_to_db(session: Session, graph: nx.DiGraph) -> None:
     session.commit()
 
 
-@given(inputs=nx_graph_and_two_nodes(connected=False))
-def test_single_multi_target_equivalent(inputs: tuple[nx.DiGraph, int, int]):
-    graph, src, dst = inputs
-    adj_list_rep = {n: set(graph[n]) for n in graph}
-    note(f"Graph: {adj_list_rep}")
-    with session_scope() as session:
-        add_nx_graph_to_db(session, graph)
-        single_target_result = single_target_bfs(session, str(src), str(dst))
-        multi_target_ppd = multi_target_bfs(session, str(src))
-        single_target_via_pp = follow_parent_pointers(dst, multi_target_ppd)
-        if single_target_result is None:
-            assert single_target_via_pp is None
-        else:
-            assert single_target_via_pp is not None
-            assert len(single_target_result) == len(single_target_via_pp)
-
-
-@given(inputs=nx_graph_and_two_nodes(connected=False), data=st.data())
-def test_single_target_optimal_substructure(
-    inputs: tuple[nx.DiGraph, int, int], data: st.DataObject
-) -> None:
-    graph, src, dst = inputs
-    adj_list_rep = {n: set(graph[n]) for n in graph}
-    note(f"Graph: {adj_list_rep}")
-    with session_scope() as session:
-        add_nx_graph_to_db(session, graph)
-        path = single_target_bfs(session, str(src), str(dst))
-        if path is None:
-            return
-        # shortest paths have optimal substructure:
-        # if the path is P[0..n], P[i..j] is a shortest path from i to j
-        # for all 0 <= i <= j <= n
-        sub_start_i = data.draw(
-            st.sampled_from(range(len(path))), label="index of start of sub-path"
-        )
-        sub_end_i = data.draw(
-            st.sampled_from(range(sub_start_i, len(path))),
-            label="index of end of sub-path",
-        )
-        sub_src = path[sub_start_i]
-        sub_dst = path[sub_end_i]
-        subpath = single_target_bfs(session, sub_src, sub_dst)
-        assert subpath is not None
-        assert len(path[sub_start_i : sub_end_i + 1]) == len(subpath)
-
-
 def is_valid_path(path: list[str], graph: nx.Graph) -> bool:
     """
     :return: true if all edges in path exist in provided graph, false otherwise
@@ -174,32 +122,22 @@ def is_valid_path(path: list[str], graph: nx.Graph) -> bool:
 
 
 @given(inputs=nx_graph_and_two_nodes(connected=False))
-@example(inputs=(nx.DiGraph([(0, 0)]), 0, 0))
-@example(inputs=(nx.DiGraph([(-2, 1), (0, 2), (1, -2), (1, 2)]), 1, 2))
-def test_uni_bidi_equivalent(inputs: tuple[nx.DiGraph, int, int]) -> None:
+def test_multi_nx_equivalent(inputs: tuple[nx.DiGraph, int, int]):
     graph, src, dst = inputs
     adj_list_rep = {n: set(graph[n]) for n in graph}
     note(f"Graph: {adj_list_rep}")
     with session_scope() as session:
         add_nx_graph_to_db(session, graph)
-        uni_path = single_target_bfs(session, str(src), str(dst))
-        bidi_path = bidi_bfs(session, str(src), str(dst))
-        if uni_path is None:
-            assert bidi_path is None
+        multi_target_ppd = multi_target_bfs(session, str(src))
+        single_target_via_pp = follow_parent_pointers(dst, multi_target_ppd)
+        try:
+            nx_path = nx.shortest_path(graph, src, dst)
+        except nx.NetworkXNoPath:
+            assert single_target_via_pp is None
         else:
-            assert bidi_path is not None, f"Got unidirectional path {uni_path}"
-            assert len(uni_path) == len(bidi_path), (uni_path, bidi_path)
-
-
-@given(inputs=nx_graph_and_two_nodes(connected=False))
-def test_fuzz_bidi(inputs: tuple[nx.DiGraph, int, int]) -> None:
-    graph, src, dst = inputs
-    adj_list_rep = {n: set(graph[n]) for n in graph}
-    note(f"Graph: {adj_list_rep}")
-    with session_scope() as session:
-        add_nx_graph_to_db(session, graph)
-        # should never throw: src_id and dst_id can be found from given titles
-        bidi_bfs(session, str(src), str(dst))
+            assert single_target_via_pp is not None
+            assert is_valid_path(list(map(str, single_target_via_pp)), graph)
+            assert len(nx_path) == len(single_target_via_pp)
 
 
 @given(inputs=nx_graph_and_two_nodes(connected=False))
