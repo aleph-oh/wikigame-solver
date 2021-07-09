@@ -81,7 +81,7 @@ def _bfs_update_step(
 
 def follow_parent_pointers(dst_id: int, parents: ParentMapping) -> Optional[IDPath]:
     """
-    Given a parent-pointer mapping ``parent``, find a shortest path starting from ``src_id``
+    Given a parent-pointer mapping ``parents``, find a shortest path starting from ``src_id``
     and ending at ``dst_id``, or None if no such path exists.
 
     :param dst_id: id of the article the path will end at
@@ -108,8 +108,7 @@ def follow_parent_pointers(dst_id: int, parents: ParentMapping) -> Optional[IDPa
     ...     follow_parent_pointers(parent_map[dst], parent_map) + [dst]
     ...     for dst in range(1, 6))
     True
-    >>> follow_parent_pointers(7, parent_map) is None
-    True
+    >>> follow_parent_pointers(7, parent_map)
     """
     if dst_id not in parents:
         return None
@@ -122,3 +121,29 @@ def follow_parent_pointers(dst_id: int, parents: ParentMapping) -> Optional[IDPa
         if len(parents) < len(path):
             return None
     return path[::-1]
+
+
+def follow_child_pointers(src_id: int, children: ParentMapping) -> Optional[IDPath]:
+    """
+    Given a child-pointer mapping ``children``, find a shortest path starting from ``src_id``
+    and ending at ``dst_id``, or None if no such path exists.
+
+    :param src_id: id of the article the path will end at
+    :param children: child-pointer mapping from articles to the article which they first
+                    linked to; children[dst_id] = None
+                    requires v in children.keys() for all v in children.values()
+    :return: a shortest path starting from src_id and ending at dst_id,
+            or None if no such path exists
+    >>> child_map = {0: 1, 1: 2, 2: 3, 3: 4, 4: None}
+    >>> follow_child_pointers(0, child_map)
+    [0, 1, 2, 3, 4]
+    >>> follow_child_pointers(1, child_map)
+    [1, 2, 3, 4]
+    >>> follow_child_pointers(2, child_map)
+    [2, 3, 4]
+    >>> follow_child_pointers(5, child_map)
+    """
+    path = follow_parent_pointers(src_id, children)
+    if path:
+        return path[::-1]
+    return None
