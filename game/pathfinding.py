@@ -67,36 +67,28 @@ def bidi_bfs(db: SessionTy, src_title: str, dst_title: str) -> Optional[TitlePat
     rev_q = deque([dst_id])
     done = False
     while fwq_q and rev_q:
-        # TODO: refactor this to clean it up; basically identical code here
-        # TODO: compare to BFS where you expand the smaller queue at each step (load-balancing)
         if done:
             break
-        article_id = fwq_q.popleft()
+        q: deque[int]
+        parents: ParentDict
+        opp_dir_parents: ParentDict
+        q, adj_attr, link_attr, parents, opp_dir_parents = (
+            (fwq_q, "out_links", "dst", fwd_parents, rev_parents)
+            if len(fwq_q) < len(rev_q)
+            else (rev_q, "in_links", "src", rev_parents, fwd_parents)
+        )
+        article_id = q.popleft()
         db_article: Optional[Article] = db.query(Article).get(article_id)
         assert db_article is not None
-        for link in db_article.out_links:
-            linked_to = link.dst
-            if linked_to in rev_parents:
-                fwd_parents[linked_to] = article_id
+        for link in getattr(db_article, adj_attr):
+            linked = getattr(link, link_attr)
+            if linked in opp_dir_parents:
+                parents[linked] = article_id
                 done = True
                 break
-            elif linked_to not in fwd_parents:
-                fwd_parents[linked_to] = article_id
-                fwq_q.append(linked_to)
-        if done:
-            break
-        article_id = rev_q.popleft()
-        db_article = db.query(Article).get(article_id)
-        assert db_article is not None
-        for link in db_article.in_links:
-            linked_from = link.src
-            if linked_from in fwd_parents:
-                rev_parents[linked_from] = article_id
-                done = True
-                break
-            elif linked_from not in rev_parents:
-                rev_parents[linked_from] = article_id
-                rev_q.append(linked_from)
+            elif linked not in parents:
+                parents[linked] = article_id
+                q.append(linked)
     else:
         if dst_id in fwd_parents:
             path = follow_parent_pointers(dst_id, fwd_parents)

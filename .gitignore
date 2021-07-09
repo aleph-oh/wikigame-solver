@@ -134,3 +134,5 @@ dmypy.json
 **/apicache-py3/
 pywikibot.lwp
 throttle.ctrl
+
+.DS_Store
