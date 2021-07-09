@@ -68,7 +68,7 @@ def bidi_bfs(db: SessionTy, src_title: str, dst_title: str) -> Optional[TitlePat
     done = False
     while fwq_q and rev_q:
         # TODO: refactor this to clean it up; basically identical code here
-        # TODO: compare to BFS where you expand the smaller queue at each step
+        # TODO: compare to BFS where you expand the smaller queue at each step (load-balancing)
         if done:
             break
         article_id = fwq_q.popleft()

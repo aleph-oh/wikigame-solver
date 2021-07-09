@@ -22,6 +22,8 @@ mypy = "^0.910"
 black = "^21.6b0"
 sqlalchemy-stubs = "^0.4"
 pre-commit = "^2.13.0"
+networkx = "^2.6.1"
+hypothesis-networkx = "^0.2.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
