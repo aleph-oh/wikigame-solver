@@ -82,11 +82,9 @@ def bidi_bfs(db: SessionTy, src_title: str, dst_title: str) -> Optional[TitlePat
     ), "expected not to assign to already-initialized values"
     common_node = common.pop()
     src_to_common = follow_parent_pointers(common_node, fwd_parents)
-    if src_to_common is None:
-        return None
+    assert src_to_common is not None
     common_to_dst = follow_parent_pointers(common_node, rev_parents)
-    if common_to_dst is None:
-        return None
+    assert common_to_dst is not None
     shortest_path = src_to_common[:-1] + common_to_dst[::-1]
     return _id_path_to_title_path(db, shortest_path)
 

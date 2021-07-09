@@ -124,8 +124,8 @@ def is_valid_path(path: list[str], graph: nx.Graph) -> bool:
 @given(inputs=nx_graph_and_two_nodes(connected=False))
 def test_multi_nx_equivalent(inputs: tuple[nx.DiGraph, int, int]):
     graph, src, dst = inputs
-    adj_list_rep = {n: set(graph[n]) for n in graph}
-    note(f"Graph: {adj_list_rep}")
+    edge_list = [(u, v) for u in graph for v in graph[u]]
+    note(f"Graph: {edge_list}")
     with session_scope() as session:
         add_nx_graph_to_db(session, graph)
         multi_target_ppd = multi_target_bfs(session, str(src))
@@ -143,8 +143,8 @@ def test_multi_nx_equivalent(inputs: tuple[nx.DiGraph, int, int]):
 @given(inputs=nx_graph_and_two_nodes(connected=False))
 def test_bidi_nx_same(inputs: tuple[nx.DiGraph, int, int]) -> None:
     graph, src, dst = inputs
-    adj_list_rep = {n: set(graph[n]) for n in graph}
-    note(f"Graph: {adj_list_rep}")
+    edge_list = [(u, v) for u in graph for v in graph[u]]
+    note(f"Graph: {edge_list}")
     with session_scope() as session:
         add_nx_graph_to_db(session, graph)
         try:
@@ -155,4 +155,4 @@ def test_bidi_nx_same(inputs: tuple[nx.DiGraph, int, int]) -> None:
             bidi_path = bidi_bfs(session, str(src), str(dst))
             assert bidi_path is not None
             assert is_valid_path(bidi_path, graph)
-            assert len(nx_path) == len(bidi_path)
+            assert len(nx_path) == len(bidi_path), (nx_path, bidi_path)
