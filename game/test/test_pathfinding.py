@@ -191,7 +191,7 @@ def test_single_target_optimal_substructure(
 @example(inputs=({0: {0}}, 0, 0))
 @example(inputs=({-2: {1}, -1: set(), 0: {2}, 1: {-2, 2}, 2: set(), 3: set()}, 1, 2))
 @example(inputs=({-1: {0}, 0: set(), 1: set()}, 1, 0))
-def test_uni_bidi_equivalent(inputs: tuple[Mapping[int, Iterable[int]], int, int]):
+def test_uni_bidi_equivalent(inputs: tuple[Mapping[int, Iterable[int]], int, int]) -> None:
     graph, src, dst = inputs
     with session_scope() as session:
         add_graph_to_db(session, graph)
@@ -202,3 +202,12 @@ def test_uni_bidi_equivalent(inputs: tuple[Mapping[int, Iterable[int]], int, int
         else:
             assert bidi_path is not None, f"Got unidirectional path {uni_path}"
             assert len(uni_path) == len(bidi_path), (uni_path, bidi_path)
+
+
+@given(inputs=graph_and_two_nodes(max_nodes=25, max_edges=300))
+def test_fuzz_bidi(inputs: tuple[Mapping[int, Iterable[int]], int, int]) -> None:
+    graph, src, dst = inputs
+    with session_scope() as session:
+        add_graph_to_db(session, graph)
+        # should never throw: src_id and dst_id can be found from given titles
+        bidi_bfs(session, str(src), str(dst))
