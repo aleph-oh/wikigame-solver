@@ -1,6 +1,8 @@
 """
 This module contains tests for pathfinding functions in the game.pathfinding module.
 """
+import json
+import os
 import random
 from typing import Callable, Mapping, Optional, TypeVar, cast
 
@@ -121,11 +123,28 @@ def is_valid_path(path: list[str], graph: nx.Graph) -> bool:
     return all((int_path[i], int_path[i + 1]) in graph.edges for i in range(len(int_path) - 1))
 
 
+def _to_edge_list(adj_list: dict[int, set[int]]) -> list[tuple[int, int]]:
+    return [(u, v) for u, vs in adj_list.items() for v in vs]
+
+
+def _example_from_file(file: str) -> tuple[nx.DiGraph, int, int]:
+    with open(os.path.join(os.path.dirname(__file__), file)) as f:
+        from_json = json.load(f)
+        edge_list = _to_edge_list({int(k): set(v) for k, v in from_json["graph"].items()})
+        return nx.DiGraph(edge_list), from_json["src"], from_json["dst"]
+
+
+def _to_json_example(adj_list: dict[int, list[int]], src: int, dst: int) -> str:
+    return json.dumps(
+        {"graph": {str(k): sorted(v) for k, v in adj_list.items()}, "src": src, "dst": dst}
+    )
+
+
 @given(inputs=nx_graph_and_two_nodes(connected=False))
 def test_multi_nx_equivalent(inputs: tuple[nx.DiGraph, int, int]):
     graph, src, dst = inputs
-    edge_list = [(u, v) for u in graph for v in graph[u]]
-    note(f"Graph: {edge_list}")
+    adj_list = dict(sorted([(u, sorted(graph[u])) for u in graph]))
+    note(f"As JSON example: {_to_json_example(adj_list, src, dst)}")
     with session_scope() as session:
         add_nx_graph_to_db(session, graph)
         multi_target_ppd = multi_target_bfs(session, str(src))
@@ -140,11 +159,12 @@ def test_multi_nx_equivalent(inputs: tuple[nx.DiGraph, int, int]):
             assert len(nx_path) == len(single_target_via_pp)
 
 
-@given(inputs=nx_graph_and_two_nodes(connected=False))
+@given(inputs=nx_graph_and_two_nodes(min_nodes=50, min_edges=250, connected=False))
+@example(inputs=_example_from_file("./medium_pathfinding.json"))
 def test_bidi_nx_same(inputs: tuple[nx.DiGraph, int, int]) -> None:
     graph, src, dst = inputs
-    edge_list = [(u, v) for u in graph for v in graph[u]]
-    note(f"Graph: {edge_list}")
+    adj_list = dict(sorted([(u, sorted(graph[u])) for u in graph]))
+    note(f"As JSON example: {_to_json_example(adj_list, src, dst)}")
     with session_scope() as session:
         add_nx_graph_to_db(session, graph)
         try:
