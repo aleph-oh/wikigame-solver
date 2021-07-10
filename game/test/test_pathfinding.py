@@ -159,9 +159,10 @@ def test_multi_nx_equivalent(inputs: tuple[nx.DiGraph, int, int]):
             assert len(nx_path) == len(single_target_via_pp)
 
 
-@given(inputs=nx_graph_and_two_nodes(min_nodes=50, min_edges=250, connected=False))
-# @example(inputs=_example_from_file("./medium_pathfinding.json"))
-@example(inputs=_example_from_file("./smaller_pathfinding.json"))
+@given(inputs=nx_graph_and_two_nodes(connected=False))
+@example(inputs=_example_from_file("./examples/small_01.json"))
+@example(inputs=_example_from_file("./examples/small_02.json"))
+@example(inputs=_example_from_file("./examples/medium_01.json"))
 def test_bidi_nx_same(inputs: tuple[nx.DiGraph, int, int]) -> None:
     graph, src, dst = inputs
     adj_list = dict(sorted([(u, sorted(graph[u])) for u in graph]))
