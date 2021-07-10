@@ -160,7 +160,8 @@ def test_multi_nx_equivalent(inputs: tuple[nx.DiGraph, int, int]):
 
 
 @given(inputs=nx_graph_and_two_nodes(min_nodes=50, min_edges=250, connected=False))
-@example(inputs=_example_from_file("./medium_pathfinding.json"))
+# @example(inputs=_example_from_file("./medium_pathfinding.json"))
+@example(inputs=_example_from_file("./smaller_pathfinding.json"))
 def test_bidi_nx_same(inputs: tuple[nx.DiGraph, int, int]) -> None:
     graph, src, dst = inputs
     adj_list = dict(sorted([(u, sorted(graph[u])) for u in graph]))

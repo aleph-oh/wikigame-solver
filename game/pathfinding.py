@@ -63,17 +63,6 @@ def bidi_bfs(db: SessionTy, src_title: str, dst_title: str) -> Optional[TitlePat
             elif linked not in parents:
                 parents[linked] = article_id
                 q.append(linked)
-    else:
-        if dst_id in fwd_parents:
-            path = follow_parent_pointers(dst_id, fwd_parents)
-            if path is None:
-                return None
-            return _id_path_to_title_path(db, path)
-        if src_id in rev_parents:
-            path = follow_parent_pointers(src_id, rev_parents)
-            if path is None:
-                return None
-            return _id_path_to_title_path(db, path[::-1])
     common = fwd_parents.keys() & rev_parents.keys()
     if not common:
         return None
