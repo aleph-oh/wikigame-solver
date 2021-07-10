@@ -39,6 +39,8 @@ def bidi_bfs(db: SessionTy, src_title: str, dst_title: str) -> Optional[TitlePat
     rev_parents: ParentDict = {dst_id: None}
     fwq_q = deque([src_id])
     rev_q = deque([dst_id])
+    fwd_expanded: set[int] = set()
+    rev_expanded: set[int] = set()
     done = False
     while fwq_q and rev_q:
         if done:
@@ -46,34 +48,40 @@ def bidi_bfs(db: SessionTy, src_title: str, dst_title: str) -> Optional[TitlePat
         q: deque[int]
         parents: ParentDict
         opp_dir_parents: ParentDict
-        q, adj_attr, link_attr, parents, opp_dir_parents = (
-            (fwq_q, "out_links", "dst", fwd_parents, rev_parents)
+        q, adj_attr, link_attr, parents, opp_dir_parents, expanded, opp_dir_expanded = (
+            (fwq_q, "out_links", "dst", fwd_parents, rev_parents, fwd_expanded, rev_expanded)
             if len(fwq_q) < len(rev_q)
-            else (rev_q, "in_links", "src", rev_parents, fwd_parents)
+            else (
+                rev_q,
+                "in_links",
+                "src",
+                rev_parents,
+                fwd_parents,
+                fwd_expanded,
+                rev_expanded,
+            )
         )
         article_id = q.popleft()
+        expanded.add(article_id)
         db_article: Optional[Article] = db.query(Article).get(article_id)
         assert db_article is not None
         for link in getattr(db_article, adj_attr):
             linked = getattr(link, link_attr)
-            if linked in opp_dir_parents:
+            if linked in opp_dir_expanded:
                 parents[linked] = article_id
                 done = True
                 break
             elif linked not in parents:
                 parents[linked] = article_id
                 q.append(linked)
-    else:
-        if dst_id in fwd_parents:
-            path = follow_parent_pointers(dst_id, fwd_parents)
-            if path is None:
-                return None
-            return _id_path_to_title_path(db, path)
-        if src_id in rev_parents:
-            path = follow_parent_pointers(src_id, rev_parents)
-            if path is None:
-                return None
-            return _id_path_to_title_path(db, path[::-1])
+    if dst_id in fwd_parents:
+        shortest_path = follow_parent_pointers(dst_id, fwd_parents)
+        assert shortest_path is not None
+        return _id_path_to_title_path(db, shortest_path)
+    if src_id in rev_parents:
+        rev_shortest_path = follow_parent_pointers(src_id, rev_parents)
+        assert rev_shortest_path is not None
+        return _id_path_to_title_path(db, rev_shortest_path[::-1])
     common = fwd_parents.keys() & rev_parents.keys()
     if not common:
         return None
